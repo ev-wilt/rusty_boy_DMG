@@ -1,0 +1,6 @@
+[package]
+name = "rusty_boy_dmg"
+version = "0.1.0"
+authors = ["Evan Wilt <ev.wilt@gmail.com>"]
+
+[dependencies]
