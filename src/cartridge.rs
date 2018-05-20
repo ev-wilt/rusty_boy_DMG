@@ -8,6 +8,8 @@ pub struct Cartridge {
 }
 
 impl Cartridge {
+
+    /// Default constructor.
     pub fn new() -> Cartridge {
         let args: Vec<String> = env::args().collect();
         let mut cartridge = Cartridge {
@@ -36,6 +38,3 @@ impl Cartridge {
         Ok(buffer)
     }
 }
-
-
-

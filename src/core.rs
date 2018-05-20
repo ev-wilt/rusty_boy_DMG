@@ -5,6 +5,8 @@ pub struct Core {
 }
 
 impl Core {
+
+    /// Default constructor.
     pub fn new() -> Core {
         Core {
             gameboy: Gameboy::new()
