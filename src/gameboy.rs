@@ -1,7 +1,9 @@
 use cartridge::*;
+use cpu::*;
 
 pub struct Gameboy {
-    pub cartridge: Cartridge
+    pub cartridge: Cartridge,
+    pub cpu: Cpu
 }
 
 impl Gameboy {
@@ -9,7 +11,8 @@ impl Gameboy {
     /// Default constructor.
     pub fn new() -> Gameboy {
         Gameboy {
-            cartridge: Cartridge::new()
+            cartridge: Cartridge::new(),
+            cpu: Cpu::new()
         }
     }
 }

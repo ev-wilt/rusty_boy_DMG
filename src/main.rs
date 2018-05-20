@@ -1,13 +1,11 @@
 mod core;
 mod gameboy;
 mod cartridge;
+mod cpu;
 
 use core::Core;
 
 fn main() {
-    let core = Core::new();
-    println!("{}", core.gameboy.cartridge.rom.len());
-    for i in 0..core.gameboy.cartridge.rom.len() {
-        print!("{}", core.gameboy.cartridge.rom[i]);
-    }
+    let mut core = Core::new();
+    println!("{:04X}", core.gameboy.cpu.reg_pair(0x01, 0x4D));
 }
