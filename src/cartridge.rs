@@ -24,7 +24,7 @@ impl Cartridge {
         return cartridge;
     }
 
-    /// Reads a game to a vector on success.
+    /// Reads a rom file's bytes to a vector on success.
     pub fn read_rom(&mut self, location: &str) -> io::Result<Vec<u8>> {
         let mut rom = File::open(location)?;
         let mut buffer = Vec::new();
