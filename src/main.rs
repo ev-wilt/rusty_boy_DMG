@@ -3,6 +3,7 @@ mod gameboy;
 mod cartridge;
 mod cpu;
 mod register_pair;
+mod memory_manager;
 
 use core::Core;
 
