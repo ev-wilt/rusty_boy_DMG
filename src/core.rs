@@ -27,6 +27,3 @@ impl Core {
         // Render display
     }
 }
-
-
-

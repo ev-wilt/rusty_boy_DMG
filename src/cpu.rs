@@ -10,7 +10,7 @@ pub struct Cpu {
     reg_hl: RegisterPair,
     reg_sp: RegisterPair,
 
-    // 16-bit registers
+    // Program counter
     reg_pc: u16,
 
     // Memory manager
@@ -31,5 +31,4 @@ impl Cpu {
             memory_manager: MemoryManager::new()
         }
     }
-
 }

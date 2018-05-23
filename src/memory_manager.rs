@@ -1,3 +1,5 @@
+enum 
+
 pub struct MemoryManager {
     memory: [u8; 0x10000]
 }
@@ -9,6 +11,8 @@ impl MemoryManager {
         let mut manager = MemoryManager {
             memory: [0; 0x10000]
         };
+
+        // Initial startup sequence
         manager.memory[0xFF05] = 0x00; 
         manager.memory[0xFF06] = 0x00; 
         manager.memory[0xFF07] = 0x00; 
@@ -43,5 +47,27 @@ impl MemoryManager {
         manager
     }
 
-    
+    /// Writes byte to the given address in memory.
+    pub fn write_memory(&mut self, address: u16, byte: u8) {
+        // Prohibit writing to ROM
+        if address < 0x8000 {
+            panic!("Attempted to write 0x{:02X} at memory location 0x{:04X}, which is read-only.", byte, address);
+        }
+
+        // Shadow of work RAM
+        else if address >= 0xE000 && address < 0xFE00 {
+            self.memory[address as usize] = byte;
+            self.write_memory(address - 0x2000, byte)
+        }
+
+        // Unusable memory
+        else if address >= 0xFEA0 && address < 0xFEFF {
+            panic!("Attempted to write 0x{:02X} at memory location 0x{:04X}, which is unsusable.", byte, address);
+        }
+
+        // Write to memory normally in all other cases
+        else {
+            self.memory[address as usize] = byte;
+        }
+    }
 }
