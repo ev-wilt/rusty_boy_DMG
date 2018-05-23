@@ -1,4 +1,3 @@
-enum 
 
 pub struct MemoryManager {
     memory: [u8; 0x10000]
