@@ -1,5 +1,7 @@
+use cartridge::*;
 
 pub struct MemoryManager {
+    cartridge: Cartridge,
     memory: [u8; 0x10000]
 }
 
@@ -8,6 +10,7 @@ impl MemoryManager {
     /// Default constructor.
     pub fn new() -> MemoryManager {
         let mut manager = MemoryManager {
+            cartridge: Cartridge::new(),
             memory: [0; 0x10000]
         };
 
