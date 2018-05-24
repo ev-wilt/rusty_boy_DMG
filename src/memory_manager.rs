@@ -51,6 +51,7 @@ impl MemoryManager {
 
     /// Writes byte to the given address in memory.
     pub fn write_memory(&mut self, address: u16, byte: u8) {
+        
         // Prohibit writing to ROM
         if address < 0x8000 {
             panic!("Attempted to write 0x{:02X} at memory location 0x{:04X}, which is read-only.", byte, address);
@@ -71,5 +72,26 @@ impl MemoryManager {
         else {
             self.memory[address as usize] = byte;
         }
+    }
+
+    /// Reads a byte from the given address in memory.
+    pub fn read_memory(&mut self, address: u16) -> u8 {
+        
+        // Reading ROM bank
+        if address >= 0x4000 && address <= 0x7FFF {
+            let shifted_address: u16 = address - 0x4000;
+            let rom_bank = self.cartridge.get_current_rom_bank();
+            return self.cartridge.get_rom((shifted_address + (rom_bank as u16 * 0x4000)) as u32);
+        }
+
+        // Reading RAM bank
+        if address >= 0xA000 && address <= 0xBFFF {
+            let shifted_address: u16 = address - 0xA000;
+            let ram_bank = self.cartridge.get_current_ram_bank();
+            return self.cartridge.get_ram(shifted_address + (ram_bank as u16 * 0x2000));
+        }
+
+        // Return byte normally otherwise
+        self.memory[address as usize]
     }
 }

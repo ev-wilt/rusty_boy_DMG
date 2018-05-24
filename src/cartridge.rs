@@ -10,21 +10,27 @@ enum BankingType {
 }
 
 pub struct Cartridge {
-    pub rom: Vec<u8>,
-    banking_type: BankingType
+    rom: Vec<u8>,
+    ram_banks: [u8; 0x8000],
+    banking_type: BankingType,
+    current_rom_bank: u8,
+    current_ram_bank: u8
 }
 
 impl Cartridge {
 
     /// Default constructor.
     pub fn new() -> Cartridge {
-        let args: Vec<String> = env::args().collect();
         let mut cartridge = Cartridge {
             rom: Vec::new(),
-            banking_type: BankingType::NoBanking
+            ram_banks: [0; 0x8000],
+            banking_type: BankingType::NoBanking,
+            current_rom_bank: 1,
+            current_ram_bank: 0
         };
 
-        // Set rom to ROM data
+        // Set rom to bytes from file
+        let args: Vec<String> = env::args().collect();
         let rom = cartridge.read_rom(&args[1]);
         let rom = match rom {
             Ok(rom) => rom,
@@ -32,7 +38,7 @@ impl Cartridge {
         };
         cartridge.rom = rom;
 
-        // Set banking type
+        // Set rom banking type
         match cartridge.rom[0x147] {
             0 => cartridge.banking_type = BankingType::NoBanking,
             1 | 2 | 3 => cartridge.banking_type = BankingType::MBC1,
@@ -54,5 +60,25 @@ impl Cartridge {
             panic!("Invalid ROM size, {} bytes", buffer.len());
         }
         Ok(buffer)
+    }
+
+    /// Returns the byte in rom at a given address.
+    pub fn get_rom(&mut self, address: u32) -> u8 {
+        self.rom[address as usize]
+    }
+
+    /// Returns the byte in a ram bank at a given address.
+    pub fn get_ram(&mut self, address: u16) -> u8 {
+        self.ram_banks[address as usize]
+    }
+
+    /// Getter for the current rom bank.
+    pub fn get_current_rom_bank(&mut self) -> u8 {
+        self.current_rom_bank
+    }
+
+    /// Getter for the current ram bank.
+    pub fn get_current_ram_bank(&mut self) -> u8 {
+        self.current_ram_bank
     }
 }
