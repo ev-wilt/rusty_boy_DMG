@@ -1,6 +1,5 @@
 use register_pair::*;
 use memory_manager::*;
-use cartridge::*;
 
 pub struct Cpu {
 

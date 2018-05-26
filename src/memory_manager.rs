@@ -2,7 +2,7 @@ use cartridge::*;
 
 pub struct MemoryManager {
     cartridge: Cartridge,
-    memory: [u8; 0x10000]
+    memory: [u8; 0x10000],
 }
 
 impl MemoryManager {
@@ -11,7 +11,7 @@ impl MemoryManager {
     pub fn new() -> MemoryManager {
         let mut manager = MemoryManager {
             cartridge: Cartridge::new(),
-            memory: [0; 0x10000]
+            memory: [0; 0x10000],
         };
 
         // Initial startup sequence
@@ -46,15 +46,25 @@ impl MemoryManager {
         manager.memory[0xFF4A] = 0x00; 
         manager.memory[0xFF4B] = 0x00; 
         manager.memory[0xFFFF] = 0x00; 
+
         manager
     }
 
     /// Writes byte to the given address in memory.
     pub fn write_memory(&mut self, address: u16, byte: u8) {
         
-        // Prohibit writing to ROM
+        // Banking
         if address < 0x8000 {
-            panic!("Attempted to write 0x{:02X} at memory location 0x{:04X}, which is read-only.", byte, address);
+            self.cartridge.manage_banking(address, byte);
+        }
+
+        // Writing to RAM bank
+        else if address >= 0xA000 && address < 0xC000 {
+            if self.cartridge.ram_write_enabled {
+                let shifted_address: u16 = address - 0xA000;
+                let ram_bank = self.cartridge.get_current_ram_bank();
+                self.cartridge.set_ram(shifted_address + (ram_bank as u16 * 0x2000), byte);
+            }
         }
 
         // Shadow of work RAM
