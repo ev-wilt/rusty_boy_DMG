@@ -1,8 +1,14 @@
 use cartridge::*;
 
+static TIMER: u16 = 0xFF05;
+static TIMER_MODULATOR: u16 = 0xFF06;
+static TIMER_CONTROLLER: u16 = 0xFF07;
+
 pub struct MemoryManager {
     cartridge: Cartridge,
     memory: [u8; 0x10000],
+    timer_counter: i32,
+    div_counter: i32
 }
 
 impl MemoryManager {
@@ -12,6 +18,8 @@ impl MemoryManager {
         let mut manager = MemoryManager {
             cartridge: Cartridge::new(),
             memory: [0; 0x10000],
+            timer_counter: 1024,
+            div_counter: 0
         };
 
         // Initial startup sequence
@@ -50,6 +58,24 @@ impl MemoryManager {
         manager
     }
 
+    /// Returns the clock frequency using the
+    /// first 2 bits of the timer controller.
+    pub fn get_frequency(&mut self) -> u8 {
+        self.read_memory(TIMER_CONTROLLER) & 0x03
+    }
+
+    /// Sets the clocks frequency.
+    pub fn set_frequency(&mut self) {
+        let new_frequency = self.get_frequency();
+        match new_frequency {
+            0 => self.timer_counter = 1024,
+            1 => self.timer_counter = 16,
+            2 => self.timer_counter = 64,
+            3 => self.timer_counter = 256,
+            _ => panic!("Impossible value for frequency: {}", new_frequency)
+        }
+    }
+
     /// Writes byte to the given address in memory.
     pub fn write_memory(&mut self, address: u16, byte: u8) {
         
@@ -78,6 +104,17 @@ impl MemoryManager {
             panic!("Attempted to write 0x{:02X} at memory location 0x{:04X}, which is unsusable.", byte, address);
         }
 
+        // Updating frequency
+        else if address == TIMER_CONTROLLER {
+            let frequency = self.get_frequency();
+            self.memory[TIMER_CONTROLLER as usize] = byte;
+            let new_frequency = self.get_frequency();
+
+            if frequency != new_frequency {
+                self.set_frequency();
+            }
+        }
+
         // Write to memory normally in all other cases
         else {
             self.memory[address as usize] = byte;
@@ -103,5 +140,47 @@ impl MemoryManager {
 
         // Return byte normally otherwise
         self.memory[address as usize]
+    }
+
+    /// Updates the divider register every 256 cycles.
+    pub fn update_div_register(&mut self, cycles: i32) {
+        self.div_counter += cycles;
+        if self.div_counter >= 255 {
+            self.div_counter = 0;
+            self.memory[0xFF04] += 1;
+        }
+    }
+
+    /// Returns whether the clock has been enabled.
+    pub fn clock_enabled(&mut self) -> bool {
+        if (self.read_memory(TIMER_CONTROLLER) & 0x02) == 1 {
+            return true;
+        }
+        false
+    }
+
+    /// Updates the timers based on the current
+    /// amount of CPU cycles.
+    pub fn update_timers(&mut self, cycles: i32) {
+        self.update_div_register(cycles);
+
+        // Update timer only if clock is enabled
+        if self.clock_enabled() {
+            self.timer_counter -= cycles;
+
+            if self.timer_counter <= 0 {
+                self.set_frequency();
+
+                if self.read_memory(TIMER) == 0xFF {
+                    let modulator = self.read_memory(TIMER_MODULATOR);
+                    self.write_memory(TIMER, modulator);
+                    // Request interrupt (2)
+                }
+                else {
+                    let increment_timer = self.read_memory(TIMER);
+                    self.write_memory(TIMER, increment_timer);
+                }
+            }
+        }
     }
 }

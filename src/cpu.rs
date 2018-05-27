@@ -31,4 +31,8 @@ impl Cpu {
             memory_manager: MemoryManager::new()
         }
     }
+
+    pub fn update_timers(&mut self, cycles: i32) {
+        self.memory_manager.update_timers(cycles);
+    }
 }
