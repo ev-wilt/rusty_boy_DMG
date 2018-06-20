@@ -115,6 +115,11 @@ impl MemoryManager {
             }
         }
 
+        // Reseting scanline
+        else if address == 0xFF44 {
+            self.memory[address as usize] = 0;
+        }
+
         // Write to memory normally in all other cases
         else {
             self.memory[address as usize] = byte;
