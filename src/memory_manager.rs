@@ -1,4 +1,5 @@
 use cartridge::*;
+use interrupt_handler::*;
 
 static TIMER: u16 = 0xFF05;
 static TIMER_MODULATOR: u16 = 0xFF06;
@@ -101,7 +102,8 @@ impl MemoryManager {
 
         // Unusable memory
         else if address >= 0xFEA0 && address < 0xFEFF {
-            panic!("Attempted to write 0x{:02X} at memory location 0x{:04X}, which is unsusable.", byte, address);
+            println!("Attempted to write to unusable memory address {}", address);
+            return;
         }
 
         // Updating frequency
@@ -158,7 +160,7 @@ impl MemoryManager {
 
     /// Returns whether the clock has been enabled.
     pub fn clock_enabled(&mut self) -> bool {
-        if (self.read_memory(TIMER_CONTROLLER) & 0x02) == 1 {
+        if (self.read_memory(TIMER_CONTROLLER) & 0x02) >> 1 == 1 {
             return true;
         }
         false
@@ -166,7 +168,7 @@ impl MemoryManager {
 
     /// Updates the timers based on the current
     /// amount of CPU cycles.
-    pub fn update_timers(&mut self, cycles: i32) {
+    pub fn update_timers(&mut self, cycles: i32, interrupt_handler: &mut InterruptHandler) {
         self.update_div_register(cycles);
 
         // Update timer only if clock is enabled
@@ -179,7 +181,7 @@ impl MemoryManager {
                 if self.read_memory(TIMER) == 0xFF {
                     let modulator = self.read_memory(TIMER_MODULATOR);
                     self.write_memory(TIMER, modulator);
-                    // Request interrupt (2)
+                    interrupt_handler.request_interrupt(2, self);
                 }
                 else {
                     let increment_timer = self.read_memory(TIMER);

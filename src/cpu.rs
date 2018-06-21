@@ -55,7 +55,8 @@ impl Cpu {
     /// Wrapper function for the memory manager's
     /// update timer method.
     pub fn update_timers(&mut self, cycles: i32) {
-        self.memory_manager.update_timers(cycles);
+        let interrupt_handler = &mut self.interrupt_handler;
+        self.memory_manager.update_timers(cycles, interrupt_handler);
     }
 
     /// Pushes a value onto the stack.

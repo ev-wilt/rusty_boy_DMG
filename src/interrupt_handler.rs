@@ -57,7 +57,7 @@ impl InterruptHandler {
 
     /// Requests an interrupt for the given bit,
     /// where bits 0-4 are the different interrupts.
-    pub fn request_interrupt(&mut self, bit: u8, mut memory_manager: MemoryManager) {
+    pub fn request_interrupt(&mut self, bit: u8, memory_manager: &mut MemoryManager) {
         let mut request_value = memory_manager.read_memory(0xFF0F);
         request_value |= 1 << bit;
         memory_manager.write_memory(0xFF0F, request_value);
