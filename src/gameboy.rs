@@ -28,6 +28,3 @@ impl Gameboy {
         }
     }
 }
-
-
-
