@@ -77,6 +77,18 @@ impl MemoryManager {
         }
     }
 
+    /// Performs a direct memory access transfer.
+    pub fn dma_transfer(&mut self, byte: u8) {
+        let start_address = (byte as u16) << 8;
+
+        // Copy contents of memory at start_address
+        // to end address and place them in 0xFE00-0xFE9F
+        for i in 0..0xA0 {
+            let next_byte = self.read_memory(start_address + i);
+            self.write_memory(0xFE00 + i, next_byte);
+        }
+    }
+
     /// Writes byte to the given address in memory.
     pub fn write_memory(&mut self, address: u16, byte: u8) {
         
@@ -120,6 +132,11 @@ impl MemoryManager {
         // Reseting scanline
         else if address == 0xFF44 {
             self.memory[address as usize] = 0;
+        }
+
+        // DMA Transfer
+        else if address == 0xFF46 {
+            self.dma_transfer(byte);
         }
 
         // Write to memory normally in all other cases
