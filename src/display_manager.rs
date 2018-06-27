@@ -1,30 +1,45 @@
 use memory_manager::*;
 use interrupt_handler::*;
 
-pub struct DisplayManager {
+pub struct DisplayManager<'dm> {
     display: [[[u8; 3]; 144]; 160],
-    remaining_cycles: i32
+    remaining_cycles: i32,
+    memory_manager: &'dm mut MemoryManager,
+    interrupt_handler: &'dm mut InterruptHandler<'dm>
 }
 
-impl DisplayManager {
+impl<'dm> DisplayManager<'dm> {
 
     /// Default constructor.
-    pub fn new() -> DisplayManager {
+    pub fn new(memory_manager: &'dm mut MemoryManager, interrupt_handler: &'dm mut InterruptHandler<'dm>) -> DisplayManager<'dm> {
         DisplayManager {
             display: [[[0; 3]; 144]; 160],
-            remaining_cycles: 456
+            remaining_cycles: 456,
+            memory_manager: memory_manager,
+            interrupt_handler: interrupt_handler
         }
     }
 
+    /// Draws the current scanline.
+    pub fn draw_scanline(&mut self) {
+        let display_control = self.memory_manager.read_memory(0xFF40);
+
+        if display_control & 1 == 1 {
+            // Render tiles
+        }
+        if display_control & (1 << 1) == 1 {
+            // Render sprites
+        }
+    }
 
     /// Determines whether the scanline
     /// needs to be updated.
     pub fn update_display(&mut self, cycles: i32, memory_manager: &mut MemoryManager, interrupt_handler: &mut InterruptHandler) {
-        self.set_display_status(memory_manager, interrupt_handler);
+        self.set_display_status(interrupt_handler);
         
         // Update remaining cycles only if 
         // the display is enabled
-        if self.display_enabled(memory_manager) {
+        if self.display_enabled() {
             self.remaining_cycles -= cycles;
         }
         else {
@@ -39,36 +54,37 @@ impl DisplayManager {
 
             // V-Blank
             if next_scanline == 144 {
-                interrupt_handler.request_interrupt(0, memory_manager);
+                interrupt_handler.request_interrupt(0);
             }
 
             // Reset scanline
             else if next_scanline > 153 {
-                memory_manager.write_memory(0xFF44, 0);
+                self.memory_manager.write_memory(0xFF44, 0);
             }
 
+            // Draw scanline
             else if next_scanline < 144 {
-                // Draw scanline
+                self.draw_scanline();
             }
         }
     }
 
     
-    pub fn set_display_status(&mut self, memory_manager: &mut MemoryManager, interrupt_handler: &mut InterruptHandler) {
-        let mut display_status = memory_manager.read_memory(0xFF41);
+    pub fn set_display_status(&mut self, interrupt_handler: &mut InterruptHandler) {
+        let mut display_status = self.memory_manager.read_memory(0xFF41);
 
-        if !self.display_enabled(memory_manager) {
+        if !self.display_enabled() {
             self.remaining_cycles = 456;
-            memory_manager.write_memory(0xFF44, 0);
+            self.memory_manager.write_memory(0xFF44, 0);
             display_status &= 0xFC;
             display_status |= 1;
-            memory_manager.write_memory(0xFF41, display_status);
+            self.memory_manager.write_memory(0xFF41, display_status);
             return;
         }
 
         let previous_mode = display_status & 0x3;
         let mut new_mode = 0;
-        let current_scanline = memory_manager.read_memory(0xFF44);
+        let current_scanline = self.memory_manager.read_memory(0xFF44);
         let mut request_interrupt = false;
 
         // V-Blank
@@ -117,27 +133,27 @@ impl DisplayManager {
         }
 
         if request_interrupt && (new_mode != previous_mode) {
-            interrupt_handler.request_interrupt(1, memory_manager);
+            self.interrupt_handler.request_interrupt(1);
         }
 
-        if current_scanline == memory_manager.read_memory(0xFF45) {
+        if current_scanline == self.memory_manager.read_memory(0xFF45) {
             
             display_status |= 1 << 2;
             if display_status & (1 << 6) == 1 {
-                interrupt_handler.request_interrupt(1, memory_manager);
+                self.interrupt_handler.request_interrupt(1);
             }
         }
         else {
             // Set bit 2 to 0
             display_status &= 0xFB;
         }
-        memory_manager.write_memory(0xFF41, display_status);
+        self.memory_manager.write_memory(0xFF41, display_status);
     }
 
     /// Tests bit 7 at 0xFF40 to determine if the 
     /// display is enabled.
-    pub fn display_enabled(&mut self, memory_manager: &mut MemoryManager) -> bool {
-        let display_bit = if (memory_manager.read_memory(0xFF40) & 0x40) >> 6 == 1 {
+    pub fn display_enabled(&mut self) -> bool {
+        let display_bit = if (self.memory_manager.read_memory(0xFF40) & 0x40) >> 6 == 1 {
             true
         }
         else {

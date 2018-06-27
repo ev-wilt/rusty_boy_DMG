@@ -198,7 +198,7 @@ impl MemoryManager {
                 if self.read_memory(TIMER) == 0xFF {
                     let modulator = self.read_memory(TIMER_MODULATOR);
                     self.write_memory(TIMER, modulator);
-                    interrupt_handler.request_interrupt(2, self);
+                    interrupt_handler.request_interrupt(2);
                 }
                 else {
                     let increment_timer = self.read_memory(TIMER);

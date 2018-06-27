@@ -1,13 +1,13 @@
 use gameboy::*;
 
-pub struct Core {
-    pub gameboy: Gameboy
+pub struct Core<'co> {
+    pub gameboy: Gameboy<'co>
 }
 
-impl Core {
+impl<'co> Core<'co> {
 
     /// Default constructor.
-    pub fn new() -> Core {
+    pub fn new() -> Core<'co> {
         Core {
             gameboy: Gameboy::new()
         }
