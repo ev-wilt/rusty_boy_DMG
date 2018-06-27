@@ -3,7 +3,7 @@ use memory_manager::*;
 use display_manager::*;
 use interrupt_handler::*;
 
-pub struct Cpu<'cpu> {
+pub struct Cpu {
 
     // Register pairs
     reg_af: RegisterPair,
@@ -19,32 +19,27 @@ pub struct Cpu<'cpu> {
     memory_manager: MemoryManager,
 
     // Display manager
-    display_manager: DisplayManager<'cpu>,
+    display_manager: DisplayManager,
 
     // Interrupt handler
-    interrupt_handler: InterruptHandler<'cpu>
+    interrupt_handler: InterruptHandler
 }
 
-impl<'cpu> Cpu<'cpu> {
+impl Cpu {
 
     /// Default constructor.
-    pub fn new() -> Cpu<'cpu> {
-        let memory_manager = MemoryManager::new();
-        let mut cpu = Cpu {
+    pub fn new() -> Cpu {
+        Cpu {
             reg_af: RegisterPair::new(0x01B0),
             reg_bc: RegisterPair::new(0x0013),
             reg_de: RegisterPair::new(0x00D8),
             reg_hl: RegisterPair::new(0x014D),
             reg_sp: RegisterPair::new(0xFFFE),
             reg_pc: 0x0100,
-            memory_manager: memory_manager,
+            memory_manager: MemoryManager::new(),
             display_manager: DisplayManager::new(),
             interrupt_handler: InterruptHandler::new()
-        };
-        let interrupt_handler = InterruptHandler::new();
-
-        cpu.interrupt_handler.memory_manager = &mut cpu.memory_manager;
-        cpu
+        }
     }
 
     /// Getter for the program counter.

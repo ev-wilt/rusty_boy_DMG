@@ -1,30 +1,27 @@
 use memory_manager::*;
 use cpu::*;
 
-pub struct InterruptHandler<'ih> {
+pub struct InterruptHandler {
 
     // Master interrupt switch
-    interrupts_enabled: bool,
-    
-    memory_manager: &'ih mut MemoryManager,
+    interrupts_enabled: bool
 }
 
-impl<'ih> InterruptHandler<'ih> {
+impl InterruptHandler {
 
     /// Default constructor.
-    pub fn new(memory_manager: &'ih mut MemoryManager) -> InterruptHandler<'ih> {
+    pub fn new() -> InterruptHandler {
         InterruptHandler {
-            interrupts_enabled: false,
-            memory_manager: memory_manager
+            interrupts_enabled: false
         }
     }
 
     /// Handles an interrupt for a given bit.
-    pub fn handle_interrupt(&mut self, bit: u8, cpu: &mut Cpu) {
+    pub fn handle_interrupt(&mut self, bit: u8, cpu: &mut Cpu, memory_manager: &mut MemoryManager) {
         self.interrupts_enabled = false;
-        let mut request_value = self.memory_manager.read_memory(0xFF0F);
+        let mut request_value = memory_manager.read_memory(0xFF0F);
         request_value ^= 1 << bit;
-        self.memory_manager.write_memory(0xFF0F, request_value);
+        memory_manager.write_memory(0xFF0F, request_value);
 
         // Push PC onto stack
         let pc = cpu.get_reg_pc();
@@ -40,10 +37,10 @@ impl<'ih> InterruptHandler<'ih> {
     }
 
     /// Checks if any interrupts need to be handled.
-    pub fn check_interrupts(&mut self, cpu: &mut Cpu) {
+    pub fn check_interrupts(&mut self, cpu: &mut Cpu, memory_manager: &mut MemoryManager) {
         if self.interrupts_enabled {
-            let request_value = self.memory_manager.read_memory(0xFF0F);
-            let enabled_value = self.memory_manager.read_memory(0xFFFF);
+            let request_value = memory_manager.read_memory(0xFF0F);
+            let enabled_value = memory_manager.read_memory(0xFFFF);
 
             if request_value > 0 {
                 for i in 0..5 {
@@ -51,7 +48,7 @@ impl<'ih> InterruptHandler<'ih> {
                     // Check if request and enabled registers 
                     // are set to 1
                     if (request_value & (1 << i)) >> i == 1 && (enabled_value & (1 << i)) >> i == 1 {
-                        self.handle_interrupt(i, cpu);
+                        self.handle_interrupt(i, cpu, memory_manager);
                     }
                 }
             }
@@ -60,10 +57,10 @@ impl<'ih> InterruptHandler<'ih> {
 
     /// Requests an interrupt for the given bit,
     /// where bits 0-4 are the different interrupts.
-    pub fn request_interrupt(&mut self, bit: u8) {
-        let mut request_value = self.memory_manager.read_memory(0xFF0F);
+    pub fn request_interrupt(&mut self, bit: u8, memory_manager: &mut MemoryManager) {
+        let mut request_value = memory_manager.read_memory(0xFF0F);
         request_value |= 1 << bit;
-        self.memory_manager.write_memory(0xFF0F, request_value);
+        memory_manager.write_memory(0xFF0F, request_value);
     }
 
 }

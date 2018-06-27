@@ -1,13 +1,13 @@
 use cpu::*;
 
-pub struct Gameboy<'gb> {
-    pub cpu: Cpu<'gb>
+pub struct Gameboy {
+    pub cpu: Cpu
 }
 
-impl<'gb> Gameboy<'gb> {
+impl Gameboy {
 
     /// Default constructor.
-    pub fn new() -> Gameboy<'gb> {
+    pub fn new() -> Gameboy {
         Gameboy {
             cpu: Cpu::new()
         }
