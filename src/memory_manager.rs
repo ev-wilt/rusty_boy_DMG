@@ -1,5 +1,7 @@
 use cartridge::*;
 use interrupt_handler::*;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 static TIMER: u16 = 0xFF05;
 static TIMER_MODULATOR: u16 = 0xFF06;
@@ -185,7 +187,7 @@ impl MemoryManager {
 
     /// Updates the timers based on the current
     /// amount of CPU cycles.
-    pub fn update_timers(&mut self, cycles: i32, interrupt_handler: &mut InterruptHandler) {
+    pub fn update_timers(&mut self, cycles: i32, interrupt_handler: &Rc<RefCell<InterruptHandler>>) {
         self.update_div_register(cycles);
 
         // Update timer only if clock is enabled
@@ -198,7 +200,7 @@ impl MemoryManager {
                 if self.read_memory(TIMER) == 0xFF {
                     let modulator = self.read_memory(TIMER_MODULATOR);
                     self.write_memory(TIMER, modulator);
-                    interrupt_handler.request_interrupt(2, self);
+                    interrupt_handler.borrow_mut().request_interrupt(2);
                 }
                 else {
                     let increment_timer = self.read_memory(TIMER);
