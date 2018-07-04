@@ -170,6 +170,7 @@ impl DisplayManager {
     /// Adds the current sprites in memeory
     /// to the display.
     pub fn render_sprites(&mut self) {
+
         for current_sprite in 0..40 {
             let sprite_x = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4)) - 16;
             let sprite_y = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 1) - 8;
