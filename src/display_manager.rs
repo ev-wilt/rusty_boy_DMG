@@ -14,13 +14,13 @@ pub struct DisplayManager {
     display: [[[u8; 3]; 144]; 160],
     remaining_cycles: i32,
     memory_manager: Rc<RefCell<MemoryManager>>,
-    interrupt_handler: Rc<RefCell<InterruptHandler>>
+    interrupt_handler: InterruptHandler
 }
 
 impl DisplayManager {
 
     /// Default constructor.
-    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: Rc<RefCell<InterruptHandler>>) -> DisplayManager {
+    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler) -> DisplayManager {
         DisplayManager {
             display: [[[0; 3]; 144]; 160],
             remaining_cycles: 456,
@@ -266,7 +266,7 @@ impl DisplayManager {
 
             // V-Blank
             if next_scanline == 144 {
-                self.interrupt_handler.borrow_mut().request_interrupt(0);
+                self.interrupt_handler.request_interrupt(0);
             }
 
             // Reset scanline
@@ -346,14 +346,14 @@ impl DisplayManager {
         }
 
         if request_interrupt && (new_mode != previous_mode) {
-            self.interrupt_handler.borrow_mut().request_interrupt(1);
+            self.interrupt_handler.request_interrupt(1);
         }
 
         if current_scanline == self.memory_manager.borrow_mut().read_memory(0xFF45) {
             
             display_status |= 1 << 2;
             if display_status & (1 << 6) == 1 {
-                self.interrupt_handler.borrow_mut().request_interrupt(1);
+                self.interrupt_handler.request_interrupt(1);
             }
         }
         else {

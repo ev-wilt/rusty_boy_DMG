@@ -187,7 +187,7 @@ impl MemoryManager {
 
     /// Updates the timers based on the current
     /// amount of CPU cycles.
-    pub fn update_timers(&mut self, cycles: i32, interrupt_handler: &Rc<RefCell<InterruptHandler>>) {
+    pub fn update_timers(&mut self, cycles: i32, interrupt_handler: &mut InterruptHandler) {
         self.update_div_register(cycles);
 
         // Update timer only if clock is enabled
@@ -200,7 +200,7 @@ impl MemoryManager {
                 if self.read_memory(TIMER) == 0xFF {
                     let modulator = self.read_memory(TIMER_MODULATOR);
                     self.write_memory(TIMER, modulator);
-                    interrupt_handler.borrow_mut().request_interrupt(2);
+                    interrupt_handler.request_interrupt(2);
                 }
                 else {
                     let increment_timer = self.read_memory(TIMER);
