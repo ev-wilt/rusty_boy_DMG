@@ -1,4 +1,3 @@
-mod core;
 mod gameboy;
 mod cartridge;
 mod cpu;
@@ -8,8 +7,9 @@ mod display_manager;
 mod interrupt_handler;
 mod gamepad;
 
-use core::Core;
+use gameboy::*;
 
 fn main() {
-    let mut core = Core::new();
+    let mut gameboy = Gameboy::new();
+    gameboy.step();
 }

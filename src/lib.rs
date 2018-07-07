@@ -1,4 +1,3 @@
-mod core;
 mod gameboy;
 mod cartridge;
 mod cpu;

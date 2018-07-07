@@ -40,8 +40,8 @@ impl Gameboy {
             let current_cycles = 0;
             // Set current cycles and execute instruction
             self.memory_manager.borrow_mut().update_timers(current_cycles, &mut self.interrupt_handler);
-            // Update graphics
-            // Do interrupts
+            self.display_manager.update_display(current_cycles);
+            self.interrupt_handler.check_interrupts(&mut self.cpu);
         }
     }
 }
