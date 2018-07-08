@@ -93,79 +93,71 @@ impl MemoryManager {
 
     /// Writes byte to the given address in memory.
     pub fn write_memory(&mut self, address: u16, byte: u8) {
-        
-        // Banking
-        if address < 0x8000 {
-            self.cartridge.manage_banking(address, byte);
-        }
+        match address {
+            // Banking
+            0...0x7FFF => self.cartridge.manage_banking(address, byte),
 
-        // Writing to RAM bank
-        else if address >= 0xA000 && address < 0xC000 {
-            if self.cartridge.ram_write_enabled {
-                let shifted_address: u16 = address - 0xA000;
-                let ram_bank = self.cartridge.get_current_ram_bank();
-                self.cartridge.set_ram(shifted_address + (ram_bank as u16 * 0x2000), byte);
-            }
-        }
+            // Writing to RAM bank
+            0xA000...0xBFFF => {
+                if self.cartridge.ram_write_enabled {
+                    let shifted_address: u16 = address - 0xA000;
+                    let ram_bank = self.cartridge.get_current_ram_bank();
+                    self.cartridge.set_ram(shifted_address + (ram_bank as u16 * 0x2000), byte);
+                }
+            },
 
-        // Shadow of work RAM
-        else if address >= 0xE000 && address < 0xFE00 {
-            self.memory[address as usize] = byte;
-            self.write_memory(address - 0x2000, byte)
-        }
+            // Shadow of work RAM
+            0xE000...0xFDFF => {
+                self.memory[address as usize] = byte;
+                self.write_memory(address - 0x2000, byte);
+            },
 
-        // Unusable memory
-        else if address >= 0xFEA0 && address < 0xFEFF {
-            println!("Attempted to write to unusable memory address {}", address);
-            return;
-        }
+            // Unusable memory
+            0xFEA0...0xFEFE => println!("Attempted to write to unusable memory address {}", address),
 
-        // Updating frequency
-        else if address == TIMER_CONTROLLER {
-            let frequency = self.get_frequency();
-            self.memory[TIMER_CONTROLLER as usize] = byte;
-            let new_frequency = self.get_frequency();
+            // Updating frequency
+            0xFF07 => {
+                let frequency = self.get_frequency();
+                self.memory[TIMER_CONTROLLER as usize] = byte;
+                let new_frequency = self.get_frequency();
 
-            if frequency != new_frequency {
-                self.set_frequency();
-            }
-        }
+                if frequency != new_frequency {
+                    self.set_frequency();
+                }
+            },
 
-        // Reseting scanline
-        else if address == 0xFF44 {
-            self.memory[address as usize] = 0;
-        }
+            // Reseting scanline
+            0xFF44 => self.memory[address as usize] = 0,
 
-        // DMA Transfer
-        else if address == 0xFF46 {
-            self.dma_transfer(byte);
-        }
+            // DMA Transfer
+            0xFF46 => self.dma_transfer(byte),
 
-        // Write to memory normally in all other cases
-        else {
-            self.memory[address as usize] = byte;
+            // Write to memory normally in all other cases
+            _ => self.memory[address as usize] = byte
         }
     }
 
     /// Reads a byte from the given address in memory.
     pub fn read_memory(&mut self, address: u16) -> u8 {
         
-        // Reading ROM bank
-        if address >= 0x4000 && address <= 0x7FFF {
-            let shifted_address: u16 = address - 0x4000;
-            let rom_bank = self.cartridge.get_current_rom_bank();
-            return self.cartridge.get_rom((shifted_address + (rom_bank as u16 * 0x4000)) as u32);
-        }
+        match address {
+            // Reading ROM bank
+            0x4000...0x7FFF => {
+                let shifted_address: u16 = address - 0x4000;
+                let rom_bank = self.cartridge.get_current_rom_bank();
+                return self.cartridge.get_rom((shifted_address + (rom_bank as u16 * 0x4000)) as u32);
+            },
 
-        // Reading RAM bank
-        if address >= 0xA000 && address <= 0xBFFF {
-            let shifted_address: u16 = address - 0xA000;
-            let ram_bank = self.cartridge.get_current_ram_bank();
-            return self.cartridge.get_ram(shifted_address + (ram_bank as u16 * 0x2000));
-        }
+            // Reading RAM bank
+            0xA000...0xBFFF => {
+                let shifted_address: u16 = address - 0xA000;
+                let ram_bank = self.cartridge.get_current_ram_bank();
+                return self.cartridge.get_ram(shifted_address + (ram_bank as u16 * 0x2000));
+            },
 
-        // Return byte normally otherwise
-        self.memory[address as usize]
+            // Return byte normally otherwise
+            _ => return self.memory[address as usize]
+        }
     }
 
     /// Updates the divider register every 256 cycles.
