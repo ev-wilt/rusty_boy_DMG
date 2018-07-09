@@ -11,7 +11,8 @@ pub struct MemoryManager {
     cartridge: Cartridge,
     memory: [u8; 0x10000],
     timer_counter: i32,
-    div_counter: i32
+    div_counter: i32,
+    pub gamepad_state: u8
 }
 
 impl MemoryManager {
@@ -22,7 +23,8 @@ impl MemoryManager {
             cartridge: Cartridge::new(),
             memory: [0; 0x10000],
             timer_counter: 1024,
-            div_counter: 0
+            div_counter: 0,
+            gamepad_state: 0
         };
 
         // Initial startup sequence
@@ -91,6 +93,25 @@ impl MemoryManager {
         }
     }
 
+    /// Returns the updated gamepad state.
+    pub fn update_gamepad_state(&mut self) -> u8 {
+        let mut gamepad_byte = self.read_memory(0xFF00);
+        gamepad_byte ^= 0xFF;
+
+        if gamepad_byte & (1 << 4) >> 4 != 1 {
+            let mut upper_bits = self.gamepad_state >> 4;
+            upper_bits |= 0xF0;
+            gamepad_byte &= upper_bits;
+        }
+        else if gamepad_byte & (1 << 5) >> 5 != 1 {
+            let mut lower_bits = self.gamepad_state & 0xF;
+            lower_bits |= 0xF0;
+            gamepad_byte &= lower_bits;            
+        }
+
+        gamepad_byte
+    }
+
     /// Writes byte to the given address in memory.
     pub fn write_memory(&mut self, address: u16, byte: u8) {
         match address {
@@ -154,6 +175,9 @@ impl MemoryManager {
                 let ram_bank = self.cartridge.get_current_ram_bank();
                 return self.cartridge.get_ram(shifted_address + (ram_bank as u16 * 0x2000));
             },
+
+            // Request gamepad's state
+            0xFF00 =>  return self.update_gamepad_state(),
 
             // Return byte normally otherwise
             _ => return self.memory[address as usize]

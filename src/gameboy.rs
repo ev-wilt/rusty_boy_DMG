@@ -11,7 +11,8 @@ pub struct Gameboy {
     pub cpu: Cpu,
     pub memory_manager: Rc<RefCell<MemoryManager>>,
     pub interrupt_handler: InterruptHandler,
-    pub display_manager: DisplayManager
+    pub display_manager: DisplayManager,
+    pub gamepad: Gamepad
 }
 
 impl Gameboy {
@@ -22,11 +23,13 @@ impl Gameboy {
         let cpu = Cpu::new(Rc::clone(&memory_manager));
         let interrupt_handler = InterruptHandler::new(Rc::clone(&memory_manager));
         let display_manager = DisplayManager::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)));
+        let gamepad = Gamepad::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)));
         Gameboy {
             memory_manager: memory_manager,
             cpu: cpu,
             interrupt_handler: interrupt_handler,
-            display_manager: display_manager
+            display_manager: display_manager,
+            gamepad: gamepad
         }
     }
 
