@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Evan Wilt <ev.wilt@gmail.com>"]
 
 [dependencies]
+sdl2 = "0.31"

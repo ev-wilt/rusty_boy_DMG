@@ -3,7 +3,13 @@ use interrupt_handler::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub enum Color {
+use gameboy::sdl2::pixels::Color;
+use gameboy::sdl2::rect::Rect;
+use gameboy::sdl2::video::Window;
+use gameboy::sdl2::render::Canvas;
+use gameboy::sdl2::Sdl;
+
+pub enum DisplayColor {
     White,
     LightGray,
     DarkGray,
@@ -14,24 +20,55 @@ pub struct DisplayManager {
     display: [[[u8; 3]; 144]; 160],
     remaining_cycles: i32,
     memory_manager: Rc<RefCell<MemoryManager>>,
-    interrupt_handler: InterruptHandler
+    interrupt_handler: InterruptHandler,
+    canvas: Canvas<Window>
 }
 
 impl DisplayManager {
 
     /// Default constructor.
-    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler) -> DisplayManager {
+    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler, sdl_context: &Sdl) -> DisplayManager {
+        
+        // Set up video
+        let video_subsystem = sdl_context.video().unwrap();
+        let window = video_subsystem.window("Rusty Boy DMG", 160, 144)
+            .opengl()
+            .build()
+            .unwrap();
+        let mut canvas = window.into_canvas().build().unwrap();
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.clear();
+        canvas.present();
+
         DisplayManager {
             display: [[[0; 3]; 144]; 160],
             remaining_cycles: 456,
             memory_manager: memory_manager,
-            interrupt_handler: interrupt_handler
+            interrupt_handler: interrupt_handler,
+            canvas: canvas
         }
+    }
+
+    /// Draws the current contents of
+    /// the display array to the canvas.
+    pub fn draw_display(&mut self) {
+        for i in 0..160 * 144 {
+            let x = i % 160;
+            let y = i / 160;
+
+            let red = self.display[y][x][0];
+            let green = self.display[y][x][1];
+            let blue = self.display[y][x][2];
+            self.canvas.set_draw_color(Color::RGB(red, green, blue));
+            let _ = self.canvas.fill_rect(Rect::new(x as i32, y as i32, 1, 1));
+        }
+        
+        self.canvas.present();
     }
 
     /// Returns the color of a pixel given its color ID
     /// and its address.
-    pub fn get_color(&mut self, color_id: u8, address: u16) -> Color {
+    pub fn get_color(&mut self, color_id: u8, address: u16) -> DisplayColor {
         let color_palette = self.memory_manager.borrow_mut().read_memory(address);
         let mut palette_hi = 0;
         let mut palette_lo = 0;
@@ -47,13 +84,13 @@ impl DisplayManager {
         let mut color_bits = if (color_palette & (1 << palette_hi)) >> palette_hi == 1 { 1 } else { 0 };
         color_bits <<= 1;
         color_bits |= if (color_palette & (1 << palette_lo)) >> palette_lo == 1 { 1 } else { 0 };
-        let mut color = Color::White;
+        let mut color = DisplayColor::White;
 
         match color_bits {
-            0 => { color = Color::White },
-            1 => { color = Color::LightGray },
-            2 => { color = Color::DarkGray },
-            3 => { color = Color::Black }
+            0 => { color = DisplayColor::White },
+            1 => { color = DisplayColor::LightGray },
+            2 => { color = DisplayColor::DarkGray },
+            3 => { color = DisplayColor::Black }
             _ => { println!("Invalid value for color: {}", color_bits); }
         }
         color
@@ -148,10 +185,10 @@ impl DisplayManager {
             let (mut red, mut green, mut blue) = (0, 0, 0);
 
             match color {
-                Color::White => { red = 0xFF; green = 0xFF; blue = 0xFF },
-                Color::LightGray => { red = 0xCC; green = 0xCC; blue = 0xCC },
-                Color::DarkGray => { red = 0x77; green = 0x77; blue = 0x77 },
-                Color::Black => { red = 0x00; green = 0x00; blue = 0x00 }
+                DisplayColor::White => { red = 0xFF; green = 0xFF; blue = 0xFF },
+                DisplayColor::LightGray => { red = 0xCC; green = 0xCC; blue = 0xCC },
+                DisplayColor::DarkGray => { red = 0x77; green = 0x77; blue = 0x77 },
+                DisplayColor::Black => { red = 0x00; green = 0x00; blue = 0x00 }
             }
 
             let current_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44);
@@ -211,10 +248,10 @@ impl DisplayManager {
                     let (mut red, mut green, mut blue) = (0, 0, 0);
 
                     match color {
-                        Color::White => { red = 0xFF; green = 0xFF; blue = 0xFF },
-                        Color::LightGray => { red = 0xCC; green = 0xCC; blue = 0xCC },
-                        Color::DarkGray => { red = 0x77; green = 0x77; blue = 0x77 },
-                        Color::Black => { red = 0x00; green = 0x00; blue = 0x00 }
+                        DisplayColor::White => { red = 0xFF; green = 0xFF; blue = 0xFF },
+                        DisplayColor::LightGray => { red = 0xCC; green = 0xCC; blue = 0xCC },
+                        DisplayColor::DarkGray => { red = 0x77; green = 0x77; blue = 0x77 },
+                        DisplayColor::Black => { red = 0x00; green = 0x00; blue = 0x00 }
                     }
 
                     let pixel = sprite_x as i32 + (7 - sprite_pixel);

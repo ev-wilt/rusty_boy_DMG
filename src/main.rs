@@ -11,5 +11,7 @@ use gameboy::*;
 
 fn main() {
     let mut gameboy = Gameboy::new();
-    gameboy.step();
+    loop {
+        gameboy.step();
+    }
 }

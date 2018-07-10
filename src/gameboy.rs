@@ -1,3 +1,5 @@
+pub extern crate sdl2;
+
 use cpu::*;
 use memory_manager::*;
 use interrupt_handler::*;
@@ -19,10 +21,11 @@ impl Gameboy {
 
     /// Default constructor.
     pub fn new() -> Gameboy {
+        let sdl_context = sdl2::init().unwrap();
         let memory_manager = Rc::new(RefCell::new(MemoryManager::new()));
         let cpu = Cpu::new(Rc::clone(&memory_manager));
         let interrupt_handler = InterruptHandler::new(Rc::clone(&memory_manager));
-        let display_manager = DisplayManager::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)));
+        let display_manager = DisplayManager::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)), &sdl_context);
         let gamepad = Gamepad::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)));
         Gameboy {
             memory_manager: memory_manager,
@@ -46,5 +49,6 @@ impl Gameboy {
             self.display_manager.update_display(current_cycles);
             self.interrupt_handler.check_interrupts(&mut self.cpu);
         }
+        self.display_manager.draw_display();
     }
 }
