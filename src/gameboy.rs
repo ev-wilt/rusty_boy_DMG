@@ -21,12 +21,18 @@ impl Gameboy {
 
     /// Default constructor.
     pub fn new() -> Gameboy {
+
+        // SDL2 tools
         let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+        let event_pump = sdl_context.event_pump().unwrap();
+
         let memory_manager = Rc::new(RefCell::new(MemoryManager::new()));
         let cpu = Cpu::new(Rc::clone(&memory_manager));
         let interrupt_handler = InterruptHandler::new(Rc::clone(&memory_manager));
-        let display_manager = DisplayManager::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)), &sdl_context);
-        let gamepad = Gamepad::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)));
+        let display_manager = DisplayManager::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)), &video_subsystem);
+        let gamepad = Gamepad::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)), event_pump);
+
         Gameboy {
             memory_manager: memory_manager,
             cpu: cpu,
@@ -42,6 +48,7 @@ impl Gameboy {
         let max_cycles = 69905;
         let cycles_per_step = 0;
 
+        self.gamepad.poll_events();
         while cycles_per_step < max_cycles {
             let current_cycles = 0;
             // Set current cycles and execute instruction

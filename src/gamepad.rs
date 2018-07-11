@@ -3,17 +3,66 @@ use memory_manager::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use gameboy::sdl2::EventPump;
+use gameboy::sdl2::event::Event;
+use gameboy::sdl2::keyboard::Keycode;
 
 pub struct Gamepad {
     interrupt_handler: InterruptHandler,
-    memory_manager: Rc<RefCell<MemoryManager>>
+    memory_manager: Rc<RefCell<MemoryManager>>,
+    event_pump: EventPump
 }
 
 impl Gamepad {
-    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler) -> Gamepad {
+    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler, event_pump: EventPump) -> Gamepad {
         Gamepad {
             interrupt_handler: interrupt_handler,
-            memory_manager: memory_manager
+            memory_manager: memory_manager,
+            event_pump: event_pump
+        }
+    }
+
+    /// Returns an integer to identify 
+    /// the keycode.
+    pub fn resolve_key(&mut self, key: Keycode) -> Option<i32> {
+        match key {
+            Keycode::D => Some(0),
+            Keycode::A => Some(1),
+            Keycode::W => Some(2),
+            Keycode::S => Some(3),
+            Keycode::J => Some(4),
+            Keycode::K => Some(5),
+            Keycode::Space => Some(6),
+            Keycode::Return => Some(7),
+            _ => None
+        }
+    }
+
+    /// Polls the current events in the
+    /// event pump.
+    pub fn poll_events(&mut self) {
+        let mut event = self.event_pump.poll_event();
+        
+        while event != None {
+            match event.unwrap() {
+                Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                    // Quit game
+                },
+                Event::KeyDown { keycode: Some(keycode), .. } => {
+                    let key_val = self.resolve_key(keycode);
+                    if key_val != None {
+                        self.key_pressed(key_val.unwrap());
+                    }
+                },
+                Event::KeyUp { keycode: Some(keycode), .. } => {
+                    let key_val = self.resolve_key(keycode);
+                    if key_val != None {
+                        self.key_released(key_val.unwrap());
+                    }                
+                },
+                _ => {}
+            }
+            event = self.event_pump.poll_event();
         }
     }
 

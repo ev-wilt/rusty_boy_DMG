@@ -24,7 +24,7 @@ impl MemoryManager {
             memory: [0; 0x10000],
             timer_counter: 1024,
             div_counter: 0,
-            gamepad_state: 0
+            gamepad_state: 0xFF
         };
 
         // Initial startup sequence

@@ -7,7 +7,7 @@ use gameboy::sdl2::pixels::Color;
 use gameboy::sdl2::rect::Rect;
 use gameboy::sdl2::video::Window;
 use gameboy::sdl2::render::Canvas;
-use gameboy::sdl2::Sdl;
+use gameboy::sdl2::VideoSubsystem;
 
 pub enum DisplayColor {
     White,
@@ -27,10 +27,9 @@ pub struct DisplayManager {
 impl DisplayManager {
 
     /// Default constructor.
-    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler, sdl_context: &Sdl) -> DisplayManager {
+    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler, video_subsystem: &VideoSubsystem) -> DisplayManager {
         
         // Set up video
-        let video_subsystem = sdl_context.video().unwrap();
         let window = video_subsystem.window("Rusty Boy DMG", 160, 144)
             .opengl()
             .build()
@@ -62,7 +61,7 @@ impl DisplayManager {
             self.canvas.set_draw_color(Color::RGB(red, green, blue));
             let _ = self.canvas.fill_rect(Rect::new(x as i32, y as i32, 1, 1));
         }
-        
+
         self.canvas.present();
     }
 
