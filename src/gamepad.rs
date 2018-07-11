@@ -39,14 +39,15 @@ impl Gamepad {
     }
 
     /// Polls the current events in the
-    /// event pump.
-    pub fn poll_events(&mut self) {
+    /// event pump and return false
+    /// when the quit event occurs.
+    pub fn poll_events(&mut self) -> bool {
         let mut event = self.event_pump.poll_event();
-        
+
         while event != None {
             match event.unwrap() {
                 Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    // Quit game
+                    return false;
                 },
                 Event::KeyDown { keycode: Some(keycode), .. } => {
                     let key_val = self.resolve_key(keycode);
@@ -64,6 +65,7 @@ impl Gamepad {
             }
             event = self.event_pump.poll_event();
         }
+        return true;
     }
 
     /// Updates the gamepad's state when
