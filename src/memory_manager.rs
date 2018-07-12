@@ -1,7 +1,5 @@
 use cartridge::*;
 use interrupt_handler::*;
-use std::rc::Rc;
-use std::cell::RefCell;
 
 static TIMER: u16 = 0xFF05;
 static TIMER_MODULATOR: u16 = 0xFF06;

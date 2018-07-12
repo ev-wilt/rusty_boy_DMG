@@ -1,8 +1,6 @@
 use register_pair::*;
 use memory_manager::*;
-use display_manager::*;
-use interrupt_handler::*;
-use gamepad::*;
+
 use std::rc::Rc;
 use std::cell::RefCell;
 
