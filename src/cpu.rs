@@ -32,12 +32,23 @@ impl Cpu {
             reg_hl: RegisterPair::new(0x014D),
             reg_sp: RegisterPair::new(0xFFFE),
             reg_pc: 0x0100,
-            memory_manager: memory_manager,
+            memory_manager: memory_manager
+        }
+    }
+
+    /// Moves the PC and reads the next opcode,
+    /// then returns the number of cycles it 
+    /// took.
+    pub fn interpret_opcode(&mut self) {
+        let opcode = self.memory_manager.borrow_mut().read_memory(self.reg_pc);
+        self.reg_pc += 1;
+        match opcode {
+            _ => panic!("Undefined opcode: {:02X}", opcode)
         }
     }
 
     /// Getter for the program counter.
-    pub fn get_reg_pc(&self) -> u16 {
+    pub fn get_reg_pc(&mut self) -> u16 {
         self.reg_pc
     }
 

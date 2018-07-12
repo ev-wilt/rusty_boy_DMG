@@ -17,9 +17,14 @@ impl MemoryManager {
 
     /// Default constructor.
     pub fn new() -> MemoryManager {
+        let mut memory = [0; 0x10000];
+        let mut cartridge = Cartridge::new();
+        for i in 0..0x8000 {
+            memory[i] = cartridge.get_rom(i as u32);
+        }
         let mut manager = MemoryManager {
             cartridge: Cartridge::new(),
-            memory: [0; 0x10000],
+            memory: memory,
             timer_counter: 1024,
             div_counter: 0,
             gamepad_state: 0xFF
