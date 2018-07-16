@@ -55,7 +55,7 @@ impl Gameboy {
                 return false;
             }
             let current_cycles = 0;
-            // Set current cycles and execute instruction
+            self.cpu.interpret_opcode();
             self.memory_manager.borrow_mut().update_timers(current_cycles, &mut self.interrupt_handler);
             self.display_manager.update_display(current_cycles);
             self.interrupt_handler.check_interrupts(&mut self.cpu);

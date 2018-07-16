@@ -1,6 +1,8 @@
+use register::*;
+
 pub struct RegisterPair {
-    lo: u8,
-    hi: u8,
+    lo: Register,
+    hi: Register,
 }
 
 impl RegisterPair {
@@ -11,29 +13,29 @@ impl RegisterPair {
         let hi = (pair & 0xFF00) >> 8;
 
         RegisterPair {
-            lo: lo as u8,
-            hi: hi as u8
+            lo: Register::new(lo as u8),
+            hi: Register::new(hi as u8)
         }
     }
 
-    /// Setter for the low value.
-    pub fn set_lo(&mut self, lo: u8) {
-        self.lo = lo;
+    /// Getter for the low value.
+    pub fn get_lo(&mut self) -> &Register {
+        &self.lo
     }
 
-    /// Setter for the high value.
-    pub fn set_hi(&mut self, hi: u8) {
-        self.hi = hi;
+    /// Getter for the high value.
+    pub fn get_hi(&mut self) -> &Register {
+        &self.hi
     }
 
     /// Setter for a register pair.
     pub fn set_pair(&mut self, pair: u16) {
-        self.lo = (pair & 0x00FF) as u8;
-        self.hi = ((pair & 0xFF00) >> 8) as u8;
+        self.lo.set_val((pair & 0x00FF) as u8);
+        self.hi.set_val(((pair & 0xFF00) >> 8) as u8);
     }
 
     /// Getter for a register pair.
     pub fn get_pair(&mut self) -> u16 {
-        (self.hi as u16) << 8 | self.lo as u16
+        (self.hi.get_val() as u16) << 8 | self.lo.get_val() as u16
     }
 }
