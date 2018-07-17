@@ -19,13 +19,13 @@ impl RegisterPair {
     }
 
     /// Getter for the low value.
-    pub fn get_lo(&mut self) -> &Register {
-        &self.lo
+    pub fn get_lo(&mut self) -> &mut Register {
+        &mut self.lo
     }
 
     /// Getter for the high value.
-    pub fn get_hi(&mut self) -> &Register {
-        &self.hi
+    pub fn get_hi(&mut self) -> &mut Register {
+        &mut self.hi
     }
 
     /// Setter for a register pair.

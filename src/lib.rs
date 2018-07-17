@@ -7,6 +7,7 @@ mod memory_manager;
 mod display_manager;
 mod interrupt_handler;
 mod gamepad;
+mod instructions;
 
 #[cfg(test)]
 

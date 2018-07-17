@@ -1,5 +1,6 @@
 use register_pair::*;
 use memory_manager::*;
+use instructions::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -36,6 +37,22 @@ impl Cpu {
         }
     }
 
+    /// Returns the next byte in memory.
+    pub fn get_byte(&mut self) -> u8 {
+        let byte = self.memory_manager.borrow_mut().read_memory(self.reg_pc);
+        self.reg_pc += 1;
+        byte
+    }
+
+    /// Returns the next word in memory.
+    pub fn get_word(&mut self) -> u16 {
+        let byte_lo = self.memory_manager.borrow_mut().read_memory(self.reg_pc);
+        let byte_hi = self.memory_manager.borrow_mut().read_memory(self.reg_pc + 1);
+        let word = ((byte_hi as u16) << 8) | (byte_lo as u16);
+        self.reg_pc += 2;
+        word
+    }
+
     /// Moves the PC and reads the next opcode,
     /// then returns the number of cycles it 
     /// took.
@@ -43,8 +60,8 @@ impl Cpu {
         let opcode = self.memory_manager.borrow_mut().read_memory(self.reg_pc);
         self.reg_pc += 1;
         match opcode {
-            0x00 => {},
-            0x01 => {},
+            0x00 => { /* NOP */ },
+            0x01 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_bc) },
             0x02 => {},
             0x03 => {},
             0x04 => {},
@@ -57,7 +74,7 @@ impl Cpu {
             0x0B => {},
             0x0C => {},
             0x0D => {},
-            0x0E => {},
+            0x0E => { ld_u8_reg(self.get_byte(), &mut self.reg_bc.get_lo()) },
             0x0F => {},
             0x10 => {},
             0x11 => {},
@@ -107,7 +124,7 @@ impl Cpu {
             0x3D => {},
             0x3E => {},
             0x3F => {},
-            0x40 => {},
+            0x40 => { /* LD B, B */ },
             0x41 => {},
             0x42 => {},
             0x43 => {},
@@ -116,7 +133,7 @@ impl Cpu {
             0x46 => {},
             0x47 => {},
             0x48 => {},
-            0x49 => {},
+            0x49 => { /* LD C, C */ },
             0x4A => {},
             0x4B => {},
             0x4C => {},
@@ -126,7 +143,7 @@ impl Cpu {
             0x50 => {},
             0x51 => {},
             0x52 => {},
-            0x53 => {},
+            0x53 => { /* LD D, D */ },
             0x54 => {},
             0x55 => {},
             0x56 => {},
@@ -134,7 +151,7 @@ impl Cpu {
             0x58 => {},
             0x59 => {},
             0x5A => {},
-            0x5B => {},
+            0x5B => { /* LD E, E */ },
             0x5C => {},
             0x5D => {},
             0x5E => {},
@@ -143,7 +160,7 @@ impl Cpu {
             0x61 => {},
             0x62 => {},
             0x63 => {},
-            0x64 => {},
+            0x64 => { /* LD H, H */ },
             0x65 => {},
             0x66 => {},
             0x67 => {},
@@ -152,7 +169,7 @@ impl Cpu {
             0x6A => {},
             0x6B => {},
             0x6C => {},
-            0x6D => {},
+            0x6D => { /* LD L, L */ },
             0x6E => {},
             0x6F => {},
             0x70 => {},
@@ -170,7 +187,7 @@ impl Cpu {
             0x7C => {},
             0x7D => {},
             0x7E => {},
-            0x7F => {},
+            0x7F => { /* LD A, A */ },
             0x80 => {},
             0x81 => {},
             0x82 => {},
