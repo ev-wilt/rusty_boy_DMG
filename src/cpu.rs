@@ -89,7 +89,7 @@ impl Cpu {
             0x15 => {},
             0x16 => { ld_u8_reg(self.get_byte(), &mut self.reg_de.get_hi()) },
             0x17 => {},
-            0x18 => {},
+            0x18 => { self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16 },
             0x19 => {},
             0x1A => { self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(self.reg_de.get_pair())) },
             0x1B => {},
@@ -97,7 +97,11 @@ impl Cpu {
             0x1D => {},
             0x1E => { ld_u8_reg(self.get_byte(), &mut self.reg_de.get_lo()) },
             0x1F => {},
-            0x20 => {},
+            0x20 => {
+                if !test_bit(self.reg_af.get_lo(), 7) {
+                    self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
+                }
+            },
             0x21 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_hl) },
             0x22 => {
                 self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.get_hi());
@@ -108,7 +112,11 @@ impl Cpu {
             0x25 => {},
             0x26 => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.get_hi()) },
             0x27 => {},
-            0x28 => {},
+            0x28 => {
+                if test_bit(self.reg_af.get_lo(), 7) {
+                    self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
+                }
+            },
             0x29 => {},
             0x2A => {
                 self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()));
@@ -119,7 +127,11 @@ impl Cpu {
             0x2D => {},
             0x2E => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.get_lo()) },
             0x2F => {},
-            0x30 => {},
+            0x30 => {
+                if !test_bit(self.reg_af.get_lo(), 4) {
+                    self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
+                }
+            },
             0x31 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_sp) },
             0x32 => {
                 self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.get_hi());
@@ -133,7 +145,11 @@ impl Cpu {
                 self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), byte);
             },
             0x37 => {},
-            0x38 => {},
+            0x38 => {
+                if test_bit(self.reg_af.get_lo(), 4) {
+                    self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
+                }
+            },
             0x39 => {},
             0x3A => {
                 self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()));
@@ -274,15 +290,23 @@ impl Cpu {
             0xBF => {},
             0xC0 => {},
             0xC1 => {},
-            0xC2 => {},
-            0xC3 => {},
+            0xC2 => {
+                if !test_bit(self.reg_af.get_lo(), 7) {
+                    self.reg_pc = self.get_word();
+                }
+            },
+            0xC3 => { self.reg_pc = self.get_word() },
             0xC4 => {},
             0xC5 => {},
             0xC6 => {},
             0xC7 => {},
             0xC8 => {},
             0xC9 => {},
-            0xCA => {},
+            0xCA => {
+                if test_bit(self.reg_af.get_lo(), 7) {
+                    self.reg_pc = self.get_word();
+                }
+            },
             0xCB => {},
             0xCC => {},
             0xCD => {},
@@ -290,14 +314,22 @@ impl Cpu {
             0xCF => {},
             0xD0 => {},
             0xD1 => {},
-            0xD2 => {},
+            0xD2 => {
+                if !test_bit(self.reg_af.get_lo(), 4) {
+                    self.reg_pc = self.get_word();
+                }
+            },
             0xD4 => {},
             0xD5 => {},
             0xD6 => {},
             0xD7 => {},
             0xD8 => {},
             0xD9 => {},
-            0xDA => {},
+            0xDA => {
+                if test_bit(self.reg_af.get_lo(), 4) {
+                    self.reg_pc = self.get_word();
+                }
+            },
             0xDC => {},
             0xDE => {},
             0xDF => {},
@@ -308,7 +340,7 @@ impl Cpu {
             0xE6 => {},
             0xE7 => {},
             0xE8 => {},
-            0xE9 => {},
+            0xE9 => { self.reg_pc = self.reg_hl.get_pair() },
             0xEA => {},
             0xEE => {},
             0xEF => {},

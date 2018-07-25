@@ -1,5 +1,12 @@
 use register_pair::*;
 
+pub fn test_bit(byte: u8, bit: u8) -> bool {
+    if (byte & (1 << bit)) >> bit == 1 {
+        return true;
+    }
+    false
+}
+
 pub fn ld_reg_pair_reg_pair(src: &mut RegisterPair, dest: &mut RegisterPair) {
     dest.set_pair(src.get_pair());
 }
