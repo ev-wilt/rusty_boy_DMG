@@ -69,8 +69,8 @@ impl DisplayManager {
     /// and its address.
     pub fn get_color(&mut self, color_id: u8, address: u16) -> DisplayColor {
         let color_palette = self.memory_manager.borrow_mut().read_memory(address);
-        let mut palette_hi = 0;
-        let mut palette_lo = 0;
+        let palette_hi: i32;
+        let palette_lo: i32;
 
         match color_id {
             0 => { palette_hi = 1; palette_lo = 0},
@@ -99,9 +99,9 @@ impl DisplayManager {
     /// the display.
     pub fn render_tiles(&mut self) {
 
-        let mut bg_window_tile_data: u16 = 0;
-        let mut tile_map_display: u16 = 0;
-        let mut tile_y = 0;
+        let bg_window_tile_data: u16;
+        let tile_map_display: u16;
+        let tile_y: u8;
 
         let scroll_y = self.memory_manager.borrow_mut().read_memory(0xFF42);
         let scroll_x = self.memory_manager.borrow_mut().read_memory(0xFF43);
@@ -160,7 +160,7 @@ impl DisplayManager {
 
             let pixel_x = tile_x / 8;
             let tile_address = tile_map_display + pixel_x as u16 + pixel_y as u16;
-            let mut tile_id: i16 = 0;
+            let tile_id: i16;
 
             // This may need to account for whether the value is signed/unsigned        
             tile_id = self.memory_manager.borrow_mut().read_memory(tile_address as u16).into();
@@ -181,7 +181,9 @@ impl DisplayManager {
             color_id <<= 1;
             color_id |= if (line_data_lo & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
             let color = self.get_color(color_id, 0xFF47);
-            let (mut red, mut green, mut blue) = (0, 0, 0);
+            let red: u8;
+            let green: u8;
+            let blue: u8;
 
             match color {
                 DisplayColor::White => { red = 0xFF; green = 0xFF; blue = 0xFF },
@@ -244,7 +246,9 @@ impl DisplayManager {
                     color_id |= if (data_lo & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
                     let color_address = if sprite_attrs & (1 << 4) >> 4 == 1 { 0xFF49 } else { 0xFF48 };
                     let mut color = self.get_color(color_id, color_address);
-                    let (mut red, mut green, mut blue) = (0, 0, 0);
+                    let red: u8;
+                    let green: u8;
+                    let blue: u8;
 
                     match color {
                         DisplayColor::White => { red = 0xFF; green = 0xFF; blue = 0xFF },
@@ -332,7 +336,7 @@ impl DisplayManager {
         }
 
         let previous_mode = display_status & 0x3;
-        let mut new_mode = 0;
+        let new_mode: u8;
         let current_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44);
         let mut request_interrupt = false;
 

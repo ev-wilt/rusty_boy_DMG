@@ -20,6 +20,7 @@ pub struct Cpu {
     // Memory manager
     memory_manager: Rc<RefCell<MemoryManager>>,
 
+    halted: bool
 }
 
 impl Cpu {
@@ -33,7 +34,8 @@ impl Cpu {
             reg_hl: RegisterPair::new(0x014D),
             reg_sp: RegisterPair::new(0xFFFE),
             reg_pc: 0x0100,
-            memory_manager: memory_manager
+            memory_manager: memory_manager,
+            halted: false
         }
     }
 
@@ -53,10 +55,41 @@ impl Cpu {
         word
     }
 
-    /// Moves the PC and reads the next opcode,
+        /// Getter for the program counter.
+    pub fn get_reg_pc(&mut self) -> u16 {
+        self.reg_pc
+    }
+
+    /// Setter for the program counter.
+    pub fn set_reg_pc(&mut self, reg_pc: u16) {
+        self.reg_pc = reg_pc;
+    } 
+
+    pub fn get_halted(&mut self) -> bool {
+        self.halted
+    }
+
+    pub fn set_halted(&mut self, halted: bool) {
+        self.halted = halted;
+    }
+
+    /// Pushes a value onto the stack.
+    pub fn stack_push(&mut self, val: u8) {
+        let prev = self.reg_sp.get_pair();
+        self.reg_sp.set_pair(prev - 1);
+        self.memory_manager.borrow_mut().write_memory(self.reg_sp.get_pair(), val);
+    }
+
+    /// Moves the PC and executes the next opcode,
     /// then returns the number of cycles it 
     /// took.
     pub fn interpret_opcode(&mut self) {
+
+        // Don't run if halted
+        if self.halted {
+            // Return 4
+        }
+
         let opcode = self.memory_manager.borrow_mut().read_memory(self.reg_pc);
         self.reg_pc += 1;
         println!("{:02X}", opcode);
@@ -214,7 +247,7 @@ impl Cpu {
             0x73 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_de.get_lo()) },
             0x74 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_hl.get_hi()) },
             0x75 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_hl.get_lo()) },
-            0x76 => { /* HALT */ },
+            0x76 => { self.halted = true },
             0x77 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.get_hi()) },
             0x78 => { ld_u8_reg(self.reg_bc.get_hi(), &mut self.reg_af.get_hi()) },
             0x79 => { ld_u8_reg(self.reg_bc.get_lo(), &mut self.reg_af.get_hi()) },
@@ -359,22 +392,5 @@ impl Cpu {
             0xFF => {},
             _ => panic!("Undefined opcode: {:02X}", opcode)
         }
-    }
-
-    /// Getter for the program counter.
-    pub fn get_reg_pc(&mut self) -> u16 {
-        self.reg_pc
-    }
-
-    /// Setter for the program counter.
-    pub fn set_reg_pc(&mut self, reg_pc: u16) {
-        self.reg_pc = reg_pc;
-    } 
-
-    /// Pushes a value onto the stack.
-    pub fn stack_push(&mut self, val: u8) {
-        let prev = self.reg_sp.get_pair();
-        self.reg_sp.set_pair(prev - 1);
-        self.memory_manager.borrow_mut().write_memory(self.reg_sp.get_pair(), val);
     }
 }

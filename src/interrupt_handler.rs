@@ -29,8 +29,11 @@ impl InterruptHandler {
         self.memory_manager.borrow_mut().write_memory(0xFF0F, request_value);
 
         // Push PC onto stack
-        let pc = cpu.get_reg_pc();
-        cpu.stack_push(pc as u8);
+        let pc_lo = (cpu.get_reg_pc() >> 8) as u8;
+        let pc_hi = (cpu.get_reg_pc() & 0xFF) as u8;
+        cpu.stack_push(pc_hi);
+        cpu.stack_push(pc_lo);
+        cpu.set_halted(false);
 
         match bit {
             0 => cpu.set_reg_pc(0x40),    // V-Blank
