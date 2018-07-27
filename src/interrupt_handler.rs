@@ -5,9 +5,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 pub struct InterruptHandler {
-
-    // Master interrupt switch
-    interrupts_enabled: bool,
     memory_manager: Rc<RefCell<MemoryManager>>
 }
 
@@ -16,23 +13,20 @@ impl InterruptHandler {
     /// Default constructor.
     pub fn new(memory_manager: Rc<RefCell<MemoryManager>>) -> InterruptHandler {
         InterruptHandler {
-            interrupts_enabled: false,
             memory_manager: memory_manager
         }
     }
 
     /// Handles an interrupt for a given bit.
     pub fn handle_interrupt(&mut self, bit: u8, cpu: &mut Cpu) {
-        self.interrupts_enabled = false;
+        cpu.set_interrupts_enabled(false);
         let mut request_value = self.memory_manager.borrow_mut().read_memory(0xFF0F);
         request_value ^= 1 << bit;
         self.memory_manager.borrow_mut().write_memory(0xFF0F, request_value);
 
         // Push PC onto stack
-        let pc_lo = (cpu.get_reg_pc() >> 8) as u8;
-        let pc_hi = (cpu.get_reg_pc() & 0xFF) as u8;
-        cpu.stack_push(pc_hi);
-        cpu.stack_push(pc_lo);
+        let pc = cpu.get_reg_pc();
+        cpu.stack_push(pc);
         cpu.set_halted(false);
 
         match bit {
@@ -46,7 +40,7 @@ impl InterruptHandler {
 
     /// Checks if any interrupts need to be handled.
     pub fn check_interrupts(&mut self, cpu: &mut Cpu) {
-        if self.interrupts_enabled {
+        if cpu.get_interrupts_enabled() {
             let request_value = self.memory_manager.borrow_mut().read_memory(0xFF0F);
             let enabled_value = self.memory_manager.borrow_mut().read_memory(0xFFFF);
 

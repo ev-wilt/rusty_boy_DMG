@@ -20,7 +20,10 @@ pub struct Cpu {
     // Memory manager
     memory_manager: Rc<RefCell<MemoryManager>>,
 
-    halted: bool
+    // Master interrupt switch
+    interrupts_enabled: bool,
+
+    halted: bool,
 }
 
 impl Cpu {
@@ -35,6 +38,7 @@ impl Cpu {
             reg_sp: RegisterPair::new(0xFFFE),
             reg_pc: 0x0100,
             memory_manager: memory_manager,
+            interrupts_enabled: false,
             halted: false
         }
     }
@@ -55,7 +59,7 @@ impl Cpu {
         word
     }
 
-        /// Getter for the program counter.
+    /// Getter for the program counter.
     pub fn get_reg_pc(&mut self) -> u16 {
         self.reg_pc
     }
@@ -65,19 +69,39 @@ impl Cpu {
         self.reg_pc = reg_pc;
     } 
 
-    pub fn get_halted(&mut self) -> bool {
-        self.halted
-    }
-
+    /// Setter for the halted switch.
     pub fn set_halted(&mut self, halted: bool) {
         self.halted = halted;
     }
 
-    /// Pushes a value onto the stack.
-    pub fn stack_push(&mut self, val: u8) {
+    /// Getter for the interrupt switch.
+    pub fn get_interrupts_enabled(&mut self) -> bool {
+        self.interrupts_enabled
+    }
+
+    /// Setter for the interrupt switch.
+    pub fn set_interrupts_enabled(&mut self, interrupts_enabled: bool) {
+        self.interrupts_enabled = interrupts_enabled;
+    }
+
+    /// Pushes a word onto the stack.
+    pub fn stack_push(&mut self, val: u16) {
         let prev = self.reg_sp.get_pair();
+        let val_lo = (val >> 8) as u8;
+        let val_hi = (val & 0xFF) as u8;
         self.reg_sp.set_pair(prev - 1);
-        self.memory_manager.borrow_mut().write_memory(self.reg_sp.get_pair(), val);
+        self.memory_manager.borrow_mut().write_memory(self.reg_sp.get_pair(), val_hi);
+        self.reg_sp.set_pair(prev - 2);
+        self.memory_manager.borrow_mut().write_memory(self.reg_sp.get_pair(), val_lo);
+    }
+
+    /// Pops a word off the stack.
+    pub fn stack_pop(&mut self) -> u16 {
+        let prev = self.reg_sp.get_pair();
+        let mut word = (self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair() + 1) as u16) << 8;
+        word |= self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair()) as u16;
+        self.reg_sp.set_pair(prev + 2);
+        word
     }
 
     /// Moves the PC and executes the next opcode,
@@ -114,7 +138,7 @@ impl Cpu {
             0x0D => {},
             0x0E => { ld_u8_reg(self.get_byte(), &mut self.reg_bc.get_lo()) },
             0x0F => {},
-            0x10 => {},
+            0x10 => { /* STOP */ },
             0x11 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_de) },
             0x12 => { self.memory_manager.borrow_mut().write_memory(self.reg_de.get_pair(), self.reg_af.get_hi()) },
             0x13 => { inc_reg_pair(&mut self.reg_de) },
@@ -322,7 +346,10 @@ impl Cpu {
             0xBE => {},
             0xBF => {},
             0xC0 => {},
-            0xC1 => {},
+            0xC1 => { 
+                let val = self.stack_pop();
+                self.reg_bc.set_pair(val);
+            },
             0xC2 => {
                 if !test_bit(self.reg_af.get_lo(), 7) {
                     self.reg_pc = self.get_word();
@@ -330,7 +357,10 @@ impl Cpu {
             },
             0xC3 => { self.reg_pc = self.get_word() },
             0xC4 => {},
-            0xC5 => {},
+            0xC5 => { 
+                let val = self.reg_bc.get_pair();
+                self.stack_push(val);
+            },
             0xC6 => {},
             0xC7 => {},
             0xC8 => {},
@@ -346,14 +376,20 @@ impl Cpu {
             0xCE => {},
             0xCF => {},
             0xD0 => {},
-            0xD1 => {},
+            0xD1 => {
+                let val = self.stack_pop();
+                self.reg_de.set_pair(val);
+            },
             0xD2 => {
                 if !test_bit(self.reg_af.get_lo(), 4) {
                     self.reg_pc = self.get_word();
                 }
             },
             0xD4 => {},
-            0xD5 => {},
+            0xD5 => {
+                let val = self.reg_de.get_pair();
+                self.stack_push(val);
+            },
             0xD6 => {},
             0xD7 => {},
             0xD8 => {},
@@ -367,9 +403,15 @@ impl Cpu {
             0xDE => {},
             0xDF => {},
             0xE0 => {},
-            0xE1 => {},
+            0xE1 => {
+                let val = self.stack_pop();
+                self.reg_hl.set_pair(val);
+            },
             0xE2 => {},
-            0xE5 => {},
+            0xE5 => {
+                let val = self.reg_hl.get_pair();
+                self.stack_push(val);
+            },
             0xE6 => {},
             0xE7 => {},
             0xE8 => {},
@@ -378,16 +420,22 @@ impl Cpu {
             0xEE => {},
             0xEF => {},
             0xF0 => {},
-            0xF1 => {},
+            0xF1 => {
+                let val = self.stack_pop();
+                self.reg_af.set_pair(val);
+            },
             0xF2 => {},
-            0xF3 => {},
-            0xF5 => {},
+            0xF3 => { self.interrupts_enabled = false },
+            0xF5 => {
+                let val = self.reg_af.get_pair();
+                self.stack_push(val);
+            },
             0xF6 => {},
             0xF7 => {},
             0xF8 => {},
             0xF9 => {},
             0xFA => {},
-            0xFB => {},
+            0xFB => { self.interrupts_enabled = true },
             0xFE => {},
             0xFF => {},
             _ => panic!("Undefined opcode: {:02X}", opcode)
