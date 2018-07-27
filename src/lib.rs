@@ -1,16 +1,15 @@
-mod gameboy;
-mod cartridge;
-mod cpu;
-mod register_pair;
-mod memory_manager;
-mod display_manager;
-mod interrupt_handler;
-mod gamepad;
-mod instructions;
-
+pub mod gameboy;
+pub mod cartridge;
+pub mod cpu;
+pub mod register_pair;
+pub mod memory_manager;
+pub mod display_manager;
+pub mod interrupt_handler;
+pub mod gamepad;
+pub mod instructions;
 #[cfg(test)]
 
-mod tests {
+pub mod tests {
     use memory_manager::MemoryManager;
 
     #[test]

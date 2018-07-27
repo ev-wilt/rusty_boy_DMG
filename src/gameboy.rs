@@ -61,6 +61,6 @@ impl Gameboy {
             self.interrupt_handler.check_interrupts(&mut self.cpu);
         }
         self.display_manager.draw_display();
-        return true;
+        true
     }
 }

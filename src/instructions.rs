@@ -7,10 +7,6 @@ pub fn test_bit(byte: u8, bit: u8) -> bool {
     false
 }
 
-pub fn ld_reg_pair_reg_pair(src: &mut RegisterPair, dest: &mut RegisterPair) {
-    dest.set_pair(src.get_pair());
-}
-
 pub fn inc_reg_pair(dest: &mut RegisterPair) {
     let prev_pair = dest.get_pair();
     dest.set_pair(prev_pair.wrapping_add(1));
