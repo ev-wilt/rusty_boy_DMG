@@ -104,6 +104,13 @@ impl Cpu {
         word
     }
 
+    /// Calls a subroutine at a given address.
+    pub fn call_routine(&mut self, address: u16) {
+        let pc = self.reg_pc;
+        self.stack_push(pc);
+        self.reg_pc = address;
+    }
+
     /// Moves the PC and executes the next opcode,
     /// then returns the number of cycles it 
     /// took.
@@ -362,7 +369,7 @@ impl Cpu {
                 self.stack_push(val);
             },
             0xC6 => {},
-            0xC7 => {},
+            0xC7 => { self.call_routine(0x0000) },
             0xC8 => {},
             0xC9 => {},
             0xCA => {
@@ -374,7 +381,7 @@ impl Cpu {
             0xCC => {},
             0xCD => {},
             0xCE => {},
-            0xCF => {},
+            0xCF => { self.call_routine(0x0008) },
             0xD0 => {},
             0xD1 => {
                 let val = self.stack_pop();
@@ -391,7 +398,7 @@ impl Cpu {
                 self.stack_push(val);
             },
             0xD6 => {},
-            0xD7 => {},
+            0xD7 => { self.call_routine(0x0010) },
             0xD8 => {},
             0xD9 => {},
             0xDA => {
@@ -401,43 +408,62 @@ impl Cpu {
             },
             0xDC => {},
             0xDE => {},
-            0xDF => {},
-            0xE0 => {},
+            0xDF => { self.call_routine(0x0018) },
+            0xE0 => { 
+                let address = self.get_byte() as u16 | 0xFF00;
+                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.get_hi());
+            },
             0xE1 => {
                 let val = self.stack_pop();
                 self.reg_hl.set_pair(val);
             },
-            0xE2 => {},
+            0xE2 => { 
+                let address = self.reg_bc.get_lo() as u16 | 0xFF00;
+                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.get_hi());
+            },
             0xE5 => {
                 let val = self.reg_hl.get_pair();
                 self.stack_push(val);
             },
             0xE6 => {},
-            0xE7 => {},
+            0xE7 => { self.call_routine(0x0020) },
             0xE8 => {},
             0xE9 => { self.reg_pc = self.reg_hl.get_pair() },
-            0xEA => {},
+            0xEA => { 
+                let address = self.get_word();
+                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.get_hi());
+            },
             0xEE => {},
-            0xEF => {},
-            0xF0 => {},
+            0xEF => { self.call_routine(0x0028) },
+            0xF0 => { 
+                let address = self.get_byte() as u16 | 0xFF00;
+                self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(address));
+            },
             0xF1 => {
                 let val = self.stack_pop();
                 self.reg_af.set_pair(val);
+                // TODO: Set flags
             },
-            0xF2 => {},
+            0xF2 => { 
+                let address = self.reg_bc.get_lo() as u16 | 0xFF00;
+                self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(address));
+            },
             0xF3 => { self.interrupts_enabled = false },
             0xF5 => {
                 let val = self.reg_af.get_pair();
                 self.stack_push(val);
             },
             0xF6 => {},
-            0xF7 => {},
+            0xF7 => { self.call_routine(0x0030) },
             0xF8 => {},
-            0xF9 => {},
-            0xFA => {},
+            0xF9 => { self.reg_sp.set_pair(self.reg_hl.get_pair()) },
+            0xFA => { 
+                let address = self.get_word();
+                self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(address));
+            },
             0xFB => { self.interrupts_enabled = true },
             0xFE => {},
-            0xFF => {},
+            0xFF => { self.call_routine(0x0038) },
             _ => panic!("Undefined opcode: {:02X}", opcode)
         }
     }
