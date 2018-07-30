@@ -111,6 +111,11 @@ impl Cpu {
         self.reg_pc = address;
     }
 
+    /// Executes an extended instruction.
+    pub fn extended_instruction(&mut self) {
+
+    }
+
     /// Moves the PC and executes the next opcode,
     /// then returns the number of cycles it 
     /// took.
@@ -352,7 +357,11 @@ impl Cpu {
             0xBD => {},
             0xBE => {},
             0xBF => {},
-            0xC0 => {},
+            0xC0 => {
+                if !test_bit(self.reg_af.get_lo(), 7) {
+                    self.reg_pc = self.stack_pop();
+                }
+            },
             0xC1 => { 
                 let val = self.stack_pop();
                 self.reg_bc.set_pair(val);
@@ -361,28 +370,60 @@ impl Cpu {
                 if !test_bit(self.reg_af.get_lo(), 7) {
                     self.reg_pc = self.get_word();
                 }
+                else {
+                    self.reg_pc += 2;
+                }
             },
             0xC3 => { self.reg_pc = self.get_word() },
-            0xC4 => {},
+            0xC4 => {
+                if !test_bit(self.reg_af.get_lo(), 7) {
+                    let pc = self.reg_pc;
+                    self.stack_push(pc + 2);
+                    self.reg_pc = self.get_word();
+                }
+                else {
+                    self.reg_pc += 2;
+                }
+            },
             0xC5 => { 
                 let val = self.reg_bc.get_pair();
                 self.stack_push(val);
             },
             0xC6 => {},
             0xC7 => { self.call_routine(0x0000) },
-            0xC8 => {},
+            0xC8 => {
+                if test_bit(self.reg_af.get_lo(), 7) {
+                    self.reg_pc = self.stack_pop();
+                }
+            },
             0xC9 => {},
             0xCA => {
                 if test_bit(self.reg_af.get_lo(), 7) {
                     self.reg_pc = self.get_word();
                 }
+                else {
+                    self.reg_pc += 2;
+                }
             },
-            0xCB => {},
-            0xCC => {},
+            0xCB => { self.extended_instruction() },
+            0xCC => {
+                if test_bit(self.reg_af.get_lo(), 7) {
+                    let pc = self.reg_pc;
+                    self.stack_push(pc + 2);
+                    self.reg_pc = self.get_word();
+                }
+                else {
+                    self.reg_pc += 2;
+                }
+            },
             0xCD => {},
             0xCE => {},
             0xCF => { self.call_routine(0x0008) },
-            0xD0 => {},
+            0xD0 => {
+                if !test_bit(self.reg_af.get_lo(), 4) {
+                    self.reg_pc = self.stack_pop();
+                }
+            },
             0xD1 => {
                 let val = self.stack_pop();
                 self.reg_de.set_pair(val);
@@ -391,22 +432,50 @@ impl Cpu {
                 if !test_bit(self.reg_af.get_lo(), 4) {
                     self.reg_pc = self.get_word();
                 }
+                else {
+                    self.reg_pc += 2;
+                }
             },
-            0xD4 => {},
+            0xD4 => {
+                if !test_bit(self.reg_af.get_lo(), 4) {
+                    let pc = self.reg_pc;
+                    self.stack_push(pc + 2);
+                    self.reg_pc = self.get_word();
+                }
+                else {
+                    self.reg_pc += 2;
+                }
+            },
             0xD5 => {
                 let val = self.reg_de.get_pair();
                 self.stack_push(val);
             },
             0xD6 => {},
             0xD7 => { self.call_routine(0x0010) },
-            0xD8 => {},
+            0xD8 => {
+                if test_bit(self.reg_af.get_lo(), 4) {
+                    self.reg_pc = self.stack_pop();
+                }
+            },
             0xD9 => {},
             0xDA => {
                 if test_bit(self.reg_af.get_lo(), 4) {
                     self.reg_pc = self.get_word();
                 }
+                else {
+                    self.reg_pc += 2;
+                }
             },
-            0xDC => {},
+            0xDC => {
+                if test_bit(self.reg_af.get_lo(), 4) {
+                    let pc = self.reg_pc;
+                    self.stack_push(pc + 2);
+                    self.reg_pc = self.get_word();
+                }
+                else {
+                    self.reg_pc += 2;
+                }
+            },
             0xDE => {},
             0xDF => { self.call_routine(0x0018) },
             0xE0 => { 
