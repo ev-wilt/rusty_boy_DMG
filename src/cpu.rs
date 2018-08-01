@@ -111,6 +111,7 @@ impl Cpu {
         self.reg_pc = address;
     }
 
+    /// Updates the bit for the zero flag.
     pub fn update_zero_flag(&mut self, result: u8) {
         if result == 0 {
             set_bit(&mut self.reg_af.lo, 7);
@@ -120,6 +121,7 @@ impl Cpu {
         }
     }
 
+    /// Updates the bit for the subtract flag.
     pub fn update_subtract_flag(&mut self, sub_occurred: bool) {
         if sub_occurred {
             set_bit(&mut self.reg_af.lo, 6);
@@ -129,6 +131,7 @@ impl Cpu {
         }
     }
 
+    /// Updates the bit for the half carry flag.
     pub fn update_half_carry_flag(&mut self, half_carry_occurred: bool) {
         if half_carry_occurred {
             set_bit(&mut self.reg_af.lo, 5);
@@ -138,6 +141,7 @@ impl Cpu {
         }
     }
 
+    /// Updates the bit for the carry flag.
     pub fn update_carry_flag(&mut self, carry_occurred: bool) {
         if carry_occurred {
             set_bit(&mut self.reg_af.lo, 4);
@@ -147,7 +151,9 @@ impl Cpu {
         }
     }
 
-    pub fn add_reg_reg(&mut self, src: u8) {
+    /// Adds src and register A together
+    /// and stores the sum in A.
+    pub fn add_u8_a(&mut self, src: u8) {
         let sum = self.reg_af.hi.wrapping_add(src);
         self.reg_af.hi = sum;
         self.update_half_carry_flag((((src & 0x0F) + (sum & 0x0F)) & 0x10) == 0x10);
@@ -156,13 +162,14 @@ impl Cpu {
         self.update_subtract_flag(false);
     }
 
-    pub fn adc_reg_reg(&mut self, src: u8) {
+    /// Add function with carry bit.
+    pub fn adc_reg_a(&mut self, src: u8) {
         if test_bit(self.reg_af.lo, 4) {
             let sum = src.wrapping_add(1);
-            self.add_reg_reg(sum);
+            self.add_u8_a(sum);
         }
         else {
-            self.add_reg_reg(src);
+            self.add_u8_a(src);
         }
     }
 
@@ -349,24 +356,69 @@ impl Cpu {
             0x7E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_af.hi) },
             0x7F => { /* LD A, A */ },
             0x80 => {
-                let reg = self.reg_bc.hi;
-                self.add_reg_reg(reg);
+                let val = self.reg_bc.hi;
+                self.add_u8_a(val);
             },
-            0x81 => {},
-            0x82 => {},
-            0x83 => {},
-            0x84 => {},
-            0x85 => {},
-            0x86 => {},
-            0x87 => {},
-            0x88 => {},
-            0x89 => {},
-            0x8A => {},
-            0x8B => {},
-            0x8C => {},
-            0x8D => {},
-            0x8E => {},
-            0x8F => {},
+            0x81 => {
+                let val = self.reg_bc.lo;
+                self.add_u8_a(val);
+            },
+            0x82 => {
+                let val = self.reg_de.hi;
+                self.add_u8_a(val);
+            },
+            0x83 => {
+                let val = self.reg_de.lo;
+                self.add_u8_a(val);
+            },
+            0x84 => {
+                let val = self.reg_hl.hi;
+                self.add_u8_a(val);
+            },
+            0x85 => {
+                let val = self.reg_hl.lo;
+                self.add_u8_a(val);
+            },
+            0x86 => {
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.add_u8_a(val);
+            },
+            0x87 => {
+                let val = self.reg_af.hi;
+                self.add_u8_a(val);
+            },
+            0x88 => {
+                let val = self.reg_bc.hi;
+                self.adc_reg_a(val);
+            },
+            0x89 => {
+                let val = self.reg_bc.lo;
+                self.adc_reg_a(val);
+            },
+            0x8A => {
+                let val = self.reg_de.hi;
+                self.adc_reg_a(val);
+            },
+            0x8B => {
+                let val = self.reg_de.lo;
+                self.adc_reg_a(val);
+            },
+            0x8C => {
+                let val = self.reg_hl.hi;
+                self.adc_reg_a(val);
+            },
+            0x8D => {
+                let val = self.reg_hl.lo;
+                self.adc_reg_a(val);
+            },
+            0x8E => {
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.adc_reg_a(val);
+            },
+            0x8F => {
+                let val = self.reg_af.hi;
+                self.adc_reg_a(val);
+            },
             0x90 => {},
             0x91 => {},
             0x92 => {},
@@ -447,7 +499,10 @@ impl Cpu {
                 let val = self.reg_bc.get_pair();
                 self.stack_push(val);
             },
-            0xC6 => {},
+            0xC6 => {
+                let val = self.get_byte();
+                self.add_u8_a(val);
+            },
             0xC7 => { self.call_routine(0x0000) },
             0xC8 => {
                 if test_bit(self.reg_af.lo, 7) {
