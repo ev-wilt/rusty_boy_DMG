@@ -24,3 +24,11 @@ pub fn ld_u16_reg_pair(src: u16, dest: &mut RegisterPair) {
 pub fn ld_u8_reg(src: u8, dest: &mut u8) {
     *dest = src;
 }
+
+pub fn set_bit(byte: &mut u8, bit: u8) {
+    *byte |= 1 << bit;
+}
+
+pub fn reset_bit(byte: &mut u8, bit: u8) {
+    *byte &= !(1 << bit);
+}

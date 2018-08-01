@@ -111,6 +111,61 @@ impl Cpu {
         self.reg_pc = address;
     }
 
+    pub fn update_zero_flag(&mut self, result: u8) {
+        if result == 0 {
+            set_bit(&mut self.reg_af.lo, 7);
+        }
+        else {
+            reset_bit(&mut self.reg_af.lo, 7);
+        }
+    }
+
+    pub fn update_subtract_flag(&mut self, sub_occurred: bool) {
+        if sub_occurred {
+            set_bit(&mut self.reg_af.lo, 6);
+        }
+        else {
+            reset_bit(&mut self.reg_af.lo, 6);
+        }
+    }
+
+    pub fn update_half_carry_flag(&mut self, half_carry_occurred: bool) {
+        if half_carry_occurred {
+            set_bit(&mut self.reg_af.lo, 5);
+        }
+        else {
+            reset_bit(&mut self.reg_af.lo, 5);
+        }
+    }
+
+    pub fn update_carry_flag(&mut self, carry_occurred: bool) {
+        if carry_occurred {
+            set_bit(&mut self.reg_af.lo, 4);
+        }
+        else {
+            reset_bit(&mut self.reg_af.lo, 4);
+        }
+    }
+
+    pub fn add_reg_reg(&mut self, src: u8) {
+        let sum = self.reg_af.hi.wrapping_add(src);
+        self.reg_af.hi = sum;
+        self.update_half_carry_flag((((src & 0x0F) + (sum & 0x0F)) & 0x10) == 0x10);
+        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
+        self.update_zero_flag(sum);
+        self.update_subtract_flag(false);
+    }
+
+    pub fn adc_reg_reg(&mut self, src: u8) {
+        if test_bit(self.reg_af.lo, 4) {
+            let sum = src.wrapping_add(1);
+            self.add_reg_reg(sum);
+        }
+        else {
+            self.add_reg_reg(src);
+        }
+    }
+
     /// Executes an extended instruction.
     pub fn extended_instruction(&mut self) {
 
@@ -132,78 +187,78 @@ impl Cpu {
         match opcode {
             0x00 => { /* NOP */ },
             0x01 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_bc) },
-            0x02 => { self.memory_manager.borrow_mut().write_memory(self.reg_bc.get_pair(), self.reg_af.get_hi()) },
+            0x02 => { self.memory_manager.borrow_mut().write_memory(self.reg_bc.get_pair(), self.reg_af.hi) },
             0x03 => { inc_reg_pair(&mut self.reg_bc) },
             0x04 => {},
             0x05 => {},
-            0x06 => { ld_u8_reg(self.get_byte(), &mut self.reg_bc.get_hi()) },
+            0x06 => { ld_u8_reg(self.get_byte(), &mut self.reg_bc.hi) },
             0x07 => {},
             0x08 => { 
                 let address = self.get_word();
-                self.memory_manager.borrow_mut().write_memory(address, self.reg_sp.get_lo());
-                self.memory_manager.borrow_mut().write_memory(address + 1, self.reg_sp.get_hi());
+                self.memory_manager.borrow_mut().write_memory(address, self.reg_sp.lo);
+                self.memory_manager.borrow_mut().write_memory(address + 1, self.reg_sp.hi);
             },
             0x09 => {},
-            0x0A => { self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(self.reg_bc.get_pair())) },
+            0x0A => { self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_bc.get_pair()) },
             0x0B => {},
             0x0C => {},
             0x0D => {},
-            0x0E => { ld_u8_reg(self.get_byte(), &mut self.reg_bc.get_lo()) },
+            0x0E => { ld_u8_reg(self.get_byte(), &mut self.reg_bc.lo) },
             0x0F => {},
             0x10 => { /* STOP */ },
             0x11 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_de) },
-            0x12 => { self.memory_manager.borrow_mut().write_memory(self.reg_de.get_pair(), self.reg_af.get_hi()) },
+            0x12 => { self.memory_manager.borrow_mut().write_memory(self.reg_de.get_pair(), self.reg_af.hi) },
             0x13 => { inc_reg_pair(&mut self.reg_de) },
             0x14 => {},
             0x15 => {},
-            0x16 => { ld_u8_reg(self.get_byte(), &mut self.reg_de.get_hi()) },
+            0x16 => { ld_u8_reg(self.get_byte(), &mut self.reg_de.hi) },
             0x17 => {},
             0x18 => { self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16 },
             0x19 => {},
-            0x1A => { self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(self.reg_de.get_pair())) },
+            0x1A => { self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_de.get_pair()) },
             0x1B => {},
             0x1C => {},
             0x1D => {},
-            0x1E => { ld_u8_reg(self.get_byte(), &mut self.reg_de.get_lo()) },
+            0x1E => { ld_u8_reg(self.get_byte(), &mut self.reg_de.lo) },
             0x1F => {},
             0x20 => {
-                if !test_bit(self.reg_af.get_lo(), 7) {
+                if !test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
                 }
             },
             0x21 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_hl) },
             0x22 => {
-                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.get_hi());
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.hi);
                 inc_reg_pair(&mut self.reg_hl);
             },
             0x23 => { inc_reg_pair(&mut self.reg_hl)},
             0x24 => {},
             0x25 => {},
-            0x26 => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.get_hi()) },
+            0x26 => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.hi) },
             0x27 => {},
             0x28 => {
-                if test_bit(self.reg_af.get_lo(), 7) {
+                if test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
                 }
             },
             0x29 => {},
             0x2A => {
-                self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()));
+                self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 inc_reg_pair(&mut self.reg_hl);
             },
             0x2B => {},
             0x2C => {},
             0x2D => {},
-            0x2E => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.get_lo()) },
+            0x2E => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.lo) },
             0x2F => {},
             0x30 => {
-                if !test_bit(self.reg_af.get_lo(), 4) {
+                if !test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
                 }
             },
             0x31 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_sp) },
             0x32 => {
-                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.get_hi());
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.hi);
                 dec_reg_pair(&mut self.reg_hl);
             },
             0x33 => { inc_reg_pair(&mut self.reg_sp) },
@@ -215,85 +270,88 @@ impl Cpu {
             },
             0x37 => {},
             0x38 => {
-                if test_bit(self.reg_af.get_lo(), 4) {
+                if test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
                 }
             },
             0x39 => {},
             0x3A => {
-                self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()));
+                self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 dec_reg_pair(&mut self.reg_hl);
             },
             0x3B => {},
             0x3C => {},
             0x3D => {},
-            0x3E => { ld_u8_reg(self.get_byte(), &mut self.reg_af.get_hi()) },
+            0x3E => { ld_u8_reg(self.get_byte(), &mut self.reg_af.hi) },
             0x3F => {},
             0x40 => { /* LD B, B */ },
-            0x41 => { ld_u8_reg(self.reg_bc.get_lo(), &mut self.reg_bc.get_hi()) },
-            0x42 => { ld_u8_reg(self.reg_de.get_hi(), &mut self.reg_bc.get_hi()) },
-            0x43 => { ld_u8_reg(self.reg_de.get_lo(), &mut self.reg_bc.get_hi()) },
-            0x44 => { ld_u8_reg(self.reg_hl.get_hi(), &mut self.reg_bc.get_hi()) },
-            0x45 => { ld_u8_reg(self.reg_de.get_lo(), &mut self.reg_bc.get_hi()) },
-            0x46 => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_bc.get_hi()) },
-            0x47 => { ld_u8_reg(self.reg_af.get_hi(), &mut self.reg_bc.get_hi()) },
-            0x48 => { ld_u8_reg(self.reg_bc.get_hi(), &mut self.reg_bc.get_lo()) },
+            0x41 => { ld_u8_reg(self.reg_bc.lo, &mut self.reg_bc.hi) },
+            0x42 => { ld_u8_reg(self.reg_de.hi, &mut self.reg_bc.hi) },
+            0x43 => { ld_u8_reg(self.reg_de.lo, &mut self.reg_bc.hi) },
+            0x44 => { ld_u8_reg(self.reg_hl.hi, &mut self.reg_bc.hi) },
+            0x45 => { ld_u8_reg(self.reg_de.lo, &mut self.reg_bc.hi) },
+            0x46 => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_bc.hi) },
+            0x47 => { ld_u8_reg(self.reg_af.hi, &mut self.reg_bc.hi) },
+            0x48 => { ld_u8_reg(self.reg_bc.hi, &mut self.reg_bc.lo) },
             0x49 => { /* LD C, C */ },
-            0x4A => { ld_u8_reg(self.reg_de.get_hi(), &mut self.reg_bc.get_lo()) },
-            0x4B => { ld_u8_reg(self.reg_de.get_lo(), &mut self.reg_bc.get_lo()) },
-            0x4C => { ld_u8_reg(self.reg_hl.get_hi(), &mut self.reg_bc.get_lo()) },
-            0x4D => { ld_u8_reg(self.reg_de.get_lo(), &mut self.reg_bc.get_lo()) },
-            0x4E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_bc.get_lo()) },
-            0x4F => { ld_u8_reg(self.reg_af.get_hi(), &mut self.reg_bc.get_lo()) },
-            0x50 => { ld_u8_reg(self.reg_bc.get_hi(), &mut self.reg_de.get_hi()) },
-            0x51 => { ld_u8_reg(self.reg_bc.get_lo(), &mut self.reg_de.get_hi()) },
+            0x4A => { ld_u8_reg(self.reg_de.hi, &mut self.reg_bc.lo) },
+            0x4B => { ld_u8_reg(self.reg_de.lo, &mut self.reg_bc.lo) },
+            0x4C => { ld_u8_reg(self.reg_hl.hi, &mut self.reg_bc.lo) },
+            0x4D => { ld_u8_reg(self.reg_de.lo, &mut self.reg_bc.lo) },
+            0x4E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_bc.lo) },
+            0x4F => { ld_u8_reg(self.reg_af.hi, &mut self.reg_bc.lo) },
+            0x50 => { ld_u8_reg(self.reg_bc.hi, &mut self.reg_de.hi) },
+            0x51 => { ld_u8_reg(self.reg_bc.lo, &mut self.reg_de.hi) },
             0x52 => { /* LD D, D */ },
-            0x53 => { ld_u8_reg(self.reg_de.get_lo(), &mut self.reg_de.get_hi()) },
-            0x54 => { ld_u8_reg(self.reg_hl.get_hi(), &mut self.reg_de.get_hi()) },
-            0x55 => { ld_u8_reg(self.reg_hl.get_lo(), &mut self.reg_de.get_hi()) },
-            0x56 => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_de.get_hi()) },
-            0x57 => { ld_u8_reg(self.reg_af.get_hi(), &mut self.reg_de.get_hi()) },
-            0x58 => { ld_u8_reg(self.reg_bc.get_hi(), &mut self.reg_de.get_lo()) },
-            0x59 => { ld_u8_reg(self.reg_bc.get_lo(), &mut self.reg_de.get_lo()) },
-            0x5A => { ld_u8_reg(self.reg_de.get_hi(), &mut self.reg_de.get_lo()) },
+            0x53 => { ld_u8_reg(self.reg_de.lo, &mut self.reg_de.hi) },
+            0x54 => { ld_u8_reg(self.reg_hl.hi, &mut self.reg_de.hi) },
+            0x55 => { ld_u8_reg(self.reg_hl.lo, &mut self.reg_de.hi) },
+            0x56 => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_de.hi) },
+            0x57 => { ld_u8_reg(self.reg_af.hi, &mut self.reg_de.hi) },
+            0x58 => { ld_u8_reg(self.reg_bc.hi, &mut self.reg_de.lo) },
+            0x59 => { ld_u8_reg(self.reg_bc.lo, &mut self.reg_de.lo) },
+            0x5A => { ld_u8_reg(self.reg_de.hi, &mut self.reg_de.lo) },
             0x5B => { /* LD E, E */ },
-            0x5C => { ld_u8_reg(self.reg_hl.get_hi(), &mut self.reg_de.get_lo()) },
-            0x5D => { ld_u8_reg(self.reg_hl.get_lo(), &mut self.reg_de.get_lo()) },
-            0x5E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_de.get_lo()) },
-            0x5F => { ld_u8_reg(self.reg_af.get_hi(), &mut self.reg_de.get_lo()) },
-            0x60 => { ld_u8_reg(self.reg_bc.get_hi(), &mut self.reg_hl.get_hi()) },
-            0x61 => { ld_u8_reg(self.reg_bc.get_lo(), &mut self.reg_hl.get_hi()) },
-            0x62 => { ld_u8_reg(self.reg_de.get_hi(), &mut self.reg_hl.get_hi()) },
-            0x63 => { ld_u8_reg(self.reg_de.get_lo(), &mut self.reg_hl.get_hi()) },
+            0x5C => { ld_u8_reg(self.reg_hl.hi, &mut self.reg_de.lo) },
+            0x5D => { ld_u8_reg(self.reg_hl.lo, &mut self.reg_de.lo) },
+            0x5E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_de.lo) },
+            0x5F => { ld_u8_reg(self.reg_af.hi, &mut self.reg_de.lo) },
+            0x60 => { ld_u8_reg(self.reg_bc.hi, &mut self.reg_hl.hi) },
+            0x61 => { ld_u8_reg(self.reg_bc.lo, &mut self.reg_hl.hi) },
+            0x62 => { ld_u8_reg(self.reg_de.hi, &mut self.reg_hl.hi) },
+            0x63 => { ld_u8_reg(self.reg_de.lo, &mut self.reg_hl.hi) },
             0x64 => { /* LD H, H */ },
-            0x65 => { ld_u8_reg(self.reg_hl.get_lo(), &mut self.reg_hl.get_hi()) },
-            0x66 => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_hl.get_hi()) },
-            0x67 => { ld_u8_reg(self.reg_af.get_hi(), &mut self.reg_hl.get_hi()) },
-            0x68 => { ld_u8_reg(self.reg_bc.get_hi(), &mut self.reg_hl.get_lo()) },
-            0x69 => { ld_u8_reg(self.reg_bc.get_lo(), &mut self.reg_hl.get_lo()) },
-            0x6A => { ld_u8_reg(self.reg_de.get_hi(), &mut self.reg_hl.get_lo()) },
-            0x6B => { ld_u8_reg(self.reg_de.get_lo(), &mut self.reg_hl.get_lo()) },
-            0x6C => { ld_u8_reg(self.reg_hl.get_hi(), &mut self.reg_hl.get_lo()) },
+            0x65 => { ld_u8_reg(self.reg_hl.lo, &mut self.reg_hl.hi) },
+            0x66 => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_hl.hi) },
+            0x67 => { ld_u8_reg(self.reg_af.hi, &mut self.reg_hl.hi) },
+            0x68 => { ld_u8_reg(self.reg_bc.hi, &mut self.reg_hl.lo) },
+            0x69 => { ld_u8_reg(self.reg_bc.lo, &mut self.reg_hl.lo) },
+            0x6A => { ld_u8_reg(self.reg_de.hi, &mut self.reg_hl.lo) },
+            0x6B => { ld_u8_reg(self.reg_de.lo, &mut self.reg_hl.lo) },
+            0x6C => { ld_u8_reg(self.reg_hl.hi, &mut self.reg_hl.lo) },
             0x6D => { /* LD L, L */ },
-            0x6E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_hl.get_lo()) },
-            0x6F => { ld_u8_reg(self.reg_af.get_hi(), &mut self.reg_hl.get_lo()) },
-            0x70 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_bc.get_hi()) },
-            0x71 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_bc.get_lo()) },
-            0x72 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_de.get_hi()) },
-            0x73 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_de.get_lo()) },
-            0x74 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_hl.get_hi()) },
-            0x75 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_hl.get_lo()) },
+            0x6E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_hl.lo) },
+            0x6F => { ld_u8_reg(self.reg_af.hi, &mut self.reg_hl.lo) },
+            0x70 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_bc.hi) },
+            0x71 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_bc.lo) },
+            0x72 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_de.hi) },
+            0x73 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_de.lo) },
+            0x74 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_hl.hi) },
+            0x75 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_hl.lo) },
             0x76 => { self.halted = true },
-            0x77 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.get_hi()) },
-            0x78 => { ld_u8_reg(self.reg_bc.get_hi(), &mut self.reg_af.get_hi()) },
-            0x79 => { ld_u8_reg(self.reg_bc.get_lo(), &mut self.reg_af.get_hi()) },
-            0x7A => { ld_u8_reg(self.reg_de.get_hi(), &mut self.reg_af.get_hi()) },
-            0x7B => { ld_u8_reg(self.reg_de.get_lo(), &mut self.reg_af.get_hi()) },
-            0x7C => { ld_u8_reg(self.reg_hl.get_hi(), &mut self.reg_af.get_hi()) },
-            0x7D => { ld_u8_reg(self.reg_hl.get_lo(), &mut self.reg_af.get_hi()) },
-            0x7E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_af.get_hi()) },
+            0x77 => { self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), self.reg_af.hi) },
+            0x78 => { ld_u8_reg(self.reg_bc.hi, &mut self.reg_af.hi) },
+            0x79 => { ld_u8_reg(self.reg_bc.lo, &mut self.reg_af.hi) },
+            0x7A => { ld_u8_reg(self.reg_de.hi, &mut self.reg_af.hi) },
+            0x7B => { ld_u8_reg(self.reg_de.lo, &mut self.reg_af.hi) },
+            0x7C => { ld_u8_reg(self.reg_hl.hi, &mut self.reg_af.hi) },
+            0x7D => { ld_u8_reg(self.reg_hl.lo, &mut self.reg_af.hi) },
+            0x7E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_af.hi) },
             0x7F => { /* LD A, A */ },
-            0x80 => {},
+            0x80 => {
+                let reg = self.reg_bc.hi;
+                self.add_reg_reg(reg);
+            },
             0x81 => {},
             0x82 => {},
             0x83 => {},
@@ -358,7 +416,7 @@ impl Cpu {
             0xBE => {},
             0xBF => {},
             0xC0 => {
-                if !test_bit(self.reg_af.get_lo(), 7) {
+                if !test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = self.stack_pop();
                 }
             },
@@ -367,7 +425,7 @@ impl Cpu {
                 self.reg_bc.set_pair(val);
             },
             0xC2 => {
-                if !test_bit(self.reg_af.get_lo(), 7) {
+                if !test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = self.get_word();
                 }
                 else {
@@ -376,7 +434,7 @@ impl Cpu {
             },
             0xC3 => { self.reg_pc = self.get_word() },
             0xC4 => {
-                if !test_bit(self.reg_af.get_lo(), 7) {
+                if !test_bit(self.reg_af.lo, 7) {
                     let pc = self.reg_pc;
                     self.stack_push(pc + 2);
                     self.reg_pc = self.get_word();
@@ -392,13 +450,13 @@ impl Cpu {
             0xC6 => {},
             0xC7 => { self.call_routine(0x0000) },
             0xC8 => {
-                if test_bit(self.reg_af.get_lo(), 7) {
+                if test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = self.stack_pop();
                 }
             },
             0xC9 => {},
             0xCA => {
-                if test_bit(self.reg_af.get_lo(), 7) {
+                if test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = self.get_word();
                 }
                 else {
@@ -407,7 +465,7 @@ impl Cpu {
             },
             0xCB => { self.extended_instruction() },
             0xCC => {
-                if test_bit(self.reg_af.get_lo(), 7) {
+                if test_bit(self.reg_af.lo, 7) {
                     let pc = self.reg_pc;
                     self.stack_push(pc + 2);
                     self.reg_pc = self.get_word();
@@ -420,7 +478,7 @@ impl Cpu {
             0xCE => {},
             0xCF => { self.call_routine(0x0008) },
             0xD0 => {
-                if !test_bit(self.reg_af.get_lo(), 4) {
+                if !test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = self.stack_pop();
                 }
             },
@@ -429,7 +487,7 @@ impl Cpu {
                 self.reg_de.set_pair(val);
             },
             0xD2 => {
-                if !test_bit(self.reg_af.get_lo(), 4) {
+                if !test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = self.get_word();
                 }
                 else {
@@ -437,7 +495,7 @@ impl Cpu {
                 }
             },
             0xD4 => {
-                if !test_bit(self.reg_af.get_lo(), 4) {
+                if !test_bit(self.reg_af.lo, 4) {
                     let pc = self.reg_pc;
                     self.stack_push(pc + 2);
                     self.reg_pc = self.get_word();
@@ -453,13 +511,13 @@ impl Cpu {
             0xD6 => {},
             0xD7 => { self.call_routine(0x0010) },
             0xD8 => {
-                if test_bit(self.reg_af.get_lo(), 4) {
+                if test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = self.stack_pop();
                 }
             },
             0xD9 => {},
             0xDA => {
-                if test_bit(self.reg_af.get_lo(), 4) {
+                if test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = self.get_word();
                 }
                 else {
@@ -467,7 +525,7 @@ impl Cpu {
                 }
             },
             0xDC => {
-                if test_bit(self.reg_af.get_lo(), 4) {
+                if test_bit(self.reg_af.lo, 4) {
                     let pc = self.reg_pc;
                     self.stack_push(pc + 2);
                     self.reg_pc = self.get_word();
@@ -480,15 +538,15 @@ impl Cpu {
             0xDF => { self.call_routine(0x0018) },
             0xE0 => { 
                 let address = self.get_byte() as u16 | 0xFF00;
-                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.get_hi());
+                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.hi);
             },
             0xE1 => {
                 let val = self.stack_pop();
                 self.reg_hl.set_pair(val);
             },
             0xE2 => { 
-                let address = self.reg_bc.get_lo() as u16 | 0xFF00;
-                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.get_hi());
+                let address = self.reg_bc.lo as u16 | 0xFF00;
+                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.hi);
             },
             0xE5 => {
                 let val = self.reg_hl.get_pair();
@@ -500,13 +558,13 @@ impl Cpu {
             0xE9 => { self.reg_pc = self.reg_hl.get_pair() },
             0xEA => { 
                 let address = self.get_word();
-                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.get_hi());
+                self.memory_manager.borrow_mut().write_memory(address, self.reg_af.hi);
             },
             0xEE => {},
             0xEF => { self.call_routine(0x0028) },
             0xF0 => { 
                 let address = self.get_byte() as u16 | 0xFF00;
-                self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(address));
+                self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(address);
             },
             0xF1 => {
                 let val = self.stack_pop();
@@ -514,8 +572,8 @@ impl Cpu {
                 // TODO: Set flags
             },
             0xF2 => { 
-                let address = self.reg_bc.get_lo() as u16 | 0xFF00;
-                self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(address));
+                let address = self.reg_bc.lo as u16 | 0xFF00;
+                self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(address);
             },
             0xF3 => { self.interrupts_enabled = false },
             0xF5 => {
@@ -528,7 +586,7 @@ impl Cpu {
             0xF9 => { self.reg_sp.set_pair(self.reg_hl.get_pair()) },
             0xFA => { 
                 let address = self.get_word();
-                self.reg_af.set_hi(self.memory_manager.borrow_mut().read_memory(address));
+                self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(address);
             },
             0xFB => { self.interrupts_enabled = true },
             0xFE => {},
