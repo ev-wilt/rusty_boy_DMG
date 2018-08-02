@@ -573,7 +573,7 @@ impl Cpu {
                     self.reg_pc = self.stack_pop();
                 }
             },
-            0xC9 => {},
+            0xC9 => { self.reg_pc = self.stack_pop() },
             0xCA => {
                 if test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = self.get_word();
@@ -593,7 +593,11 @@ impl Cpu {
                     self.reg_pc += 2;
                 }
             },
-            0xCD => {},
+            0xCD => {
+                let pc = self.reg_pc;
+                self.stack_push(pc + 2);
+                self.reg_pc = self.get_word();
+            },
             0xCE => {
                 let val = self.get_byte();
                 self.adc_reg_a(val);
@@ -637,7 +641,10 @@ impl Cpu {
                     self.reg_pc = self.stack_pop();
                 }
             },
-            0xD9 => {},
+            0xD9 => { 
+                self.interrupts_enabled = true;
+                self.reg_pc = self.stack_pop();
+            },
             0xDA => {
                 if test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = self.get_word();
