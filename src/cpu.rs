@@ -257,6 +257,14 @@ impl Cpu {
         self.update_subtract_flag(false);
     }
 
+    /// Compares src to the value in
+    /// register A.
+    pub fn cp_reg_a(&mut self, src: u8) {
+        let a = self.reg_af.hi;
+        self.sub_u8_a(src);
+        self.reg_af.hi = a;
+    }
+
     /// Executes an extended instruction.
     pub fn extended_instruction(&mut self) {
 
@@ -753,14 +761,38 @@ impl Cpu {
                 let val = self.reg_af.hi;
                 self.or_reg_a(val);
             },
-            0xB8 => {},
-            0xB9 => {},
-            0xBA => {},
-            0xBB => {},
-            0xBC => {},
-            0xBD => {},
-            0xBE => {},
-            0xBF => {},
+            0xB8 => {
+                let val = self.reg_bc.hi;
+                self.cp_reg_a(val);
+            },
+            0xB9 => {
+                let val = self.reg_bc.lo;
+                self.cp_reg_a(val);
+            },
+            0xBA => {
+                let val = self.reg_de.hi;
+                self.cp_reg_a(val);
+            },
+            0xBB => {
+                let val = self.reg_de.lo;
+                self.cp_reg_a(val);
+            },
+            0xBC => {
+                let val = self.reg_hl.hi;
+                self.cp_reg_a(val);
+            },
+            0xBD => {
+                let val = self.reg_hl.lo;
+                self.cp_reg_a(val);
+            },
+            0xBE => {
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.cp_reg_a(val);
+            },
+            0xBF => {
+                let val = self.reg_af.hi;
+                self.cp_reg_a(val);
+            },
             0xC0 => {
                 if !test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = self.stack_pop();
@@ -917,7 +949,10 @@ impl Cpu {
                 let val = self.reg_hl.get_pair();
                 self.stack_push(val);
             },
-            0xE6 => {},
+            0xE6 => {
+                let val = self.get_byte();
+                self.and_reg_a(val);
+            }
             0xE7 => { self.call_routine(0x0020) },
             0xE8 => {},
             0xE9 => { self.reg_pc = self.reg_hl.get_pair() },
@@ -925,7 +960,10 @@ impl Cpu {
                 let address = self.get_word();
                 self.memory_manager.borrow_mut().write_memory(address, self.reg_af.hi);
             },
-            0xEE => {},
+            0xEE => {
+                let val = self.get_byte();
+                self.xor_reg_a(val);
+            }
             0xEF => { self.call_routine(0x0028) },
             0xF0 => { 
                 let address = self.get_byte() as u16 | 0xFF00;
@@ -944,7 +982,10 @@ impl Cpu {
                 let val = self.reg_af.get_pair();
                 self.stack_push(val);
             },
-            0xF6 => {},
+            0xF6 => {
+                let val = self.get_byte();
+                self.or_reg_a(val);
+            }
             0xF7 => { self.call_routine(0x0030) },
             0xF8 => {},
             0xF9 => { self.reg_sp.set_pair(self.reg_hl.get_pair()) },
@@ -953,7 +994,10 @@ impl Cpu {
                 self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(address);
             },
             0xFB => { self.interrupts_enabled = true },
-            0xFE => {},
+            0xFE => {
+                let val = self.get_byte();
+                self.cp_reg_a(val);
+            }
             0xFF => { self.call_routine(0x0038) },
             _ => panic!("Undefined opcode: {:02X}", opcode)
         }
