@@ -224,6 +224,39 @@ impl Cpu {
         self.update_subtract_flag(false);
     }
 
+    /// Performs a bitwise AND and saves
+    /// the result in register A.
+    pub fn and_reg_a(&mut self, src: u8) {
+        let res = self.reg_af.hi & src;
+        self.reg_af.hi = res;
+        self.update_half_carry_flag(true);
+        self.update_carry_flag(false);
+        self.update_zero_flag(res);
+        self.update_subtract_flag(false);
+    }
+
+    /// Performs a bitwise OR and saves
+    /// the result in register A.
+    pub fn or_reg_a(&mut self, src: u8) {
+        let res = self.reg_af.hi | src;
+        self.reg_af.hi = res;
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(false);
+        self.update_zero_flag(res);
+        self.update_subtract_flag(false);
+    }
+
+    /// Performs a bitwise XOR and saves
+    /// the result in register A.
+    pub fn xor_reg_a(&mut self, src: u8) {
+        let res = self.reg_af.hi ^ src;
+        self.reg_af.hi = res;
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(false);
+        self.update_zero_flag(res);
+        self.update_subtract_flag(false);
+    }
+
     /// Executes an extended instruction.
     pub fn extended_instruction(&mut self) {
 
@@ -624,30 +657,102 @@ impl Cpu {
                 let val = self.reg_af.hi;
                 self.sbc_reg_a(val);
             }
-            0xA0 => {},
-            0xA1 => {},
-            0xA2 => {},
-            0xA3 => {},
-            0xA4 => {},
-            0xA5 => {},
-            0xA6 => {},
-            0xA7 => {},
-            0xA8 => {},
-            0xA9 => {},
-            0xAA => {},
-            0xAB => {},
-            0xAC => {},
-            0xAD => {},
-            0xAE => {},
-            0xAF => {},
-            0xB0 => {},
-            0xB1 => {},
-            0xB2 => {},
-            0xB3 => {},
-            0xB4 => {},
-            0xB5 => {},
-            0xB6 => {},
-            0xB7 => {},
+            0xA0 => {
+                let val = self.reg_bc.hi;
+                self.and_reg_a(val);
+            },
+            0xA1 => {
+                let val = self.reg_bc.lo;
+                self.and_reg_a(val);
+            },
+            0xA2 => {
+                let val = self.reg_de.hi;
+                self.and_reg_a(val);
+            },
+            0xA3 => {
+                let val = self.reg_de.lo;
+                self.and_reg_a(val);
+            },
+            0xA4 => {
+                let val = self.reg_hl.hi;
+                self.and_reg_a(val);
+            },
+            0xA5 => {
+                let val = self.reg_hl.lo;
+                self.and_reg_a(val);
+            },
+            0xA6 => {
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.and_reg_a(val);
+            },
+            0xA7 => {
+                let val = self.reg_af.hi;
+                self.and_reg_a(val);
+            },
+            0xA8 => {
+                let val = self.reg_bc.hi;
+                self.xor_reg_a(val);
+            },
+            0xA9 => {
+                let val = self.reg_bc.lo;
+                self.xor_reg_a(val);
+            },
+            0xAA => {
+                let val = self.reg_de.hi;
+                self.xor_reg_a(val);
+            },
+            0xAB => {
+                let val = self.reg_de.lo;
+                self.xor_reg_a(val);
+            },
+            0xAC => {
+                let val = self.reg_hl.hi;
+                self.xor_reg_a(val);
+            },
+            0xAD => {
+                let val = self.reg_hl.lo;
+                self.xor_reg_a(val);
+            },
+            0xAE => {
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.xor_reg_a(val);
+            },
+            0xAF => {
+                let val = self.reg_af.hi;
+                self.xor_reg_a(val);
+            },
+            0xB0 => {
+                let val = self.reg_bc.hi;
+                self.or_reg_a(val);
+            },
+            0xB1 => {
+                let val = self.reg_bc.lo;
+                self.or_reg_a(val);
+            },
+            0xB2 => {
+                let val = self.reg_de.hi;
+                self.or_reg_a(val);
+            },
+            0xB3 => {
+                let val = self.reg_de.lo;
+                self.or_reg_a(val);
+            },
+            0xB4 => {
+                let val = self.reg_hl.hi;
+                self.or_reg_a(val);
+            },
+            0xB5 => {
+                let val = self.reg_hl.lo;
+                self.or_reg_a(val);
+            },
+            0xB6 => {
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.or_reg_a(val);
+            },
+            0xB7 => {
+                let val = self.reg_af.hi;
+                self.or_reg_a(val);
+            },
             0xB8 => {},
             0xB9 => {},
             0xBA => {},
@@ -698,7 +803,7 @@ impl Cpu {
                     self.reg_pc = self.stack_pop();
                 }
             },
-            0xC9 => { /*self.reg_pc = self.stack_pop()*/ },
+            0xC9 => { self.reg_pc = self.stack_pop() },
             0xCA => {
                 if test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = self.get_word();
