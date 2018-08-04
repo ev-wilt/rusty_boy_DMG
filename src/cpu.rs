@@ -4,7 +4,6 @@ use instructions::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
-use std::io;
 
 pub struct Cpu {
 
@@ -193,6 +192,14 @@ impl Cpu {
         self.update_subtract_flag(false);
     }
 
+    /// Decrements an unsigned 8-bit value.
+    pub fn dec_u8(&mut self, dest: &mut u8) {
+        *dest = dest.wrapping_sub(1);
+        self.update_zero_flag(*dest);
+        self.update_half_carry_flag((*dest & 0x0F) < 1);
+        self.update_subtract_flag(true);
+    }
+
     /// Subtracts src from register A
     /// and stores the sum in A.
     pub fn sub_u8_a(&mut self, src: u8) {
@@ -226,7 +233,7 @@ impl Cpu {
     /// then returns the number of cycles it 
     /// took.
     pub fn interpret_opcode(&mut self) {
-        
+
         // Don't run if halted
         if self.halted {
             // Return 4
@@ -245,7 +252,11 @@ impl Cpu {
                 self.inc_u8(&mut b);
                 self.reg_bc.hi = b;
             },
-            0x05 => {},
+            0x05 => { 
+                let mut b = self.reg_bc.hi;
+                self.dec_u8(&mut b);
+                self.reg_bc.hi = b;
+            },
             0x06 => { ld_u8_reg(self.get_byte(), &mut self.reg_bc.hi) },
             0x07 => {},
             0x08 => { 
@@ -259,13 +270,20 @@ impl Cpu {
                 self.reg_bc.set_pair(bc);
             },
             0x0A => { self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_bc.get_pair()) },
-            0x0B => {},
+            0x0B => { 
+                let val = self.reg_bc.get_pair();
+                self.reg_bc.set_pair(val - 1);
+            },
             0x0C => { 
                 let mut c = self.reg_bc.lo;
                 self.inc_u8(&mut c);
                 self.reg_bc.lo = c;
             },
-            0x0D => {},
+            0x0D => { 
+                let mut c = self.reg_bc.lo;
+                self.dec_u8(&mut c);
+                self.reg_bc.lo = c;
+            },
             0x0E => { ld_u8_reg(self.get_byte(), &mut self.reg_bc.lo) },
             0x0F => {},
             0x10 => { /* STOP */ },
@@ -277,7 +295,11 @@ impl Cpu {
                 self.inc_u8(&mut d);
                 self.reg_de.hi = d;
             },
-            0x15 => {},
+            0x15 => { 
+                let mut d = self.reg_de.hi;
+                self.dec_u8(&mut d);
+                self.reg_de.hi = d;
+            },
             0x16 => { ld_u8_reg(self.get_byte(), &mut self.reg_de.hi) },
             0x17 => {},
             0x18 => { self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16 },
@@ -287,13 +309,20 @@ impl Cpu {
                 self.reg_de.set_pair(de);
             },
             0x1A => { self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_de.get_pair()) },
-            0x1B => {},
+            0x1B => { 
+                let val = self.reg_de.get_pair();
+                self.reg_de.set_pair(val - 1);
+            },
             0x1C => { 
                 let mut e = self.reg_de.lo;
                 self.inc_u8(&mut e);
                 self.reg_de.lo = e;
             },
-            0x1D => {},
+            0x1D => { 
+                let mut e = self.reg_de.lo;
+                self.dec_u8(&mut e);
+                self.reg_de.lo = e;
+            },
             0x1E => { ld_u8_reg(self.get_byte(), &mut self.reg_de.lo) },
             0x1F => {},
             0x20 => {
@@ -312,7 +341,11 @@ impl Cpu {
                 self.inc_u8(&mut h);
                 self.reg_hl.hi = h;
             },
-            0x25 => {},
+            0x25 => { 
+                let mut h = self.reg_hl.hi;
+                self.dec_u8(&mut h);
+                self.reg_hl.hi = h;
+            },
             0x26 => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.hi) },
             0x27 => {},
             0x28 => {
@@ -329,13 +362,20 @@ impl Cpu {
                 self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 inc_reg_pair(&mut self.reg_hl);
             },
-            0x2B => {},
+            0x2B => { 
+                let val = self.reg_hl.get_pair();
+                self.reg_hl.set_pair(val - 1);
+            },
             0x2C => { 
                 let mut l = self.reg_hl.lo;
                 self.inc_u8(&mut l);
                 self.reg_hl.lo = l;
             },
-            0x2D => {},
+            0x2D => { 
+                let mut l = self.reg_hl.lo;
+                self.dec_u8(&mut l);
+                self.reg_hl.lo = l;
+            },
             0x2E => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.lo) },
             0x2F => {},
             0x30 => {
@@ -353,7 +393,10 @@ impl Cpu {
                 let byte = &mut self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.inc_u8(byte);
             },
-            0x35 => {},
+            0x35 => {
+                let byte = &mut self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.dec_u8(byte);
+            },
             0x36 => { 
                 let byte = self.get_byte();
                 self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), byte);
@@ -373,13 +416,20 @@ impl Cpu {
                 self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 dec_reg_pair(&mut self.reg_hl);
             },
-            0x3B => {},
+            0x3B => { 
+                let val = self.reg_sp.get_pair();
+                self.reg_sp.set_pair(val - 1);
+            },
             0x3C => { 
                 let mut a = self.reg_af.hi;
                 self.inc_u8(&mut a);
                 self.reg_af.hi = a;
             },
-            0x3D => {},
+            0x3D => { 
+                let mut a = self.reg_af.hi;
+                self.dec_u8(&mut a);
+                self.reg_af.hi = a;
+            },
             0x3E => { ld_u8_reg(self.get_byte(), &mut self.reg_af.hi) },
             0x3F => {},
             0x40 => { /* LD B, B */ },
@@ -510,22 +560,70 @@ impl Cpu {
                 let val = self.reg_af.hi;
                 self.adc_reg_a(val);
             },
-            0x90 => {},
-            0x91 => {},
-            0x92 => {},
-            0x93 => {},
-            0x94 => {},
-            0x95 => {},
-            0x96 => {},
-            0x97 => {},
-            0x98 => {},
-            0x99 => {},
-            0x9A => {},
-            0x9B => {},
-            0x9C => {},
-            0x9D => {},
-            0x9E => {},
-            0x9F => {},
+            0x90 => {
+                let val = self.reg_bc.hi;
+                self.sub_u8_a(val);
+            },
+            0x91 => {
+                let val = self.reg_bc.lo;
+                self.sub_u8_a(val);
+            },
+            0x92 => {
+                let val = self.reg_de.hi;
+                self.sub_u8_a(val);
+            },
+            0x93 => {
+                let val = self.reg_de.lo;
+                self.sub_u8_a(val);
+            },
+            0x94 => {
+                let val = self.reg_hl.hi;
+                self.sub_u8_a(val);
+            },
+            0x95 => {
+                let val = self.reg_hl.lo;
+                self.sub_u8_a(val);
+            },
+            0x96 => {
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.sub_u8_a(val);
+            },
+            0x97 => {
+                let val = self.reg_af.hi;
+                self.sub_u8_a(val);
+            }
+            0x98 => {
+                let val = self.reg_bc.hi;
+                self.sbc_reg_a(val);
+            }
+            0x99 => {
+                let val = self.reg_bc.lo;
+                self.sbc_reg_a(val);
+            }
+            0x9A => {
+                let val = self.reg_de.hi;
+                self.sbc_reg_a(val);
+            }
+            0x9B => {
+                let val = self.reg_de.lo;
+                self.sbc_reg_a(val);
+            }
+            0x9C => {
+                let val = self.reg_hl.hi;
+                self.sbc_reg_a(val);
+            }
+            0x9D => {
+                let val = self.reg_hl.lo;
+                self.sbc_reg_a(val);
+            }
+            0x9E => {
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                self.sbc_reg_a(val);
+            },
+            0x9F => {
+                let val = self.reg_af.hi;
+                self.sbc_reg_a(val);
+            }
             0xA0 => {},
             0xA1 => {},
             0xA2 => {},
@@ -600,7 +698,7 @@ impl Cpu {
                     self.reg_pc = self.stack_pop();
                 }
             },
-            0xC9 => { self.reg_pc = self.stack_pop() },
+            0xC9 => { /*self.reg_pc = self.stack_pop()*/ },
             0xCA => {
                 if test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = self.get_word();
@@ -661,7 +759,10 @@ impl Cpu {
                 let val = self.reg_de.get_pair();
                 self.stack_push(val);
             },
-            0xD6 => {},
+            0xD6 => {
+                let val = self.get_byte();
+                self.sub_u8_a(val);
+            }
             0xD7 => { self.call_routine(0x0010) },
             0xD8 => {
                 if test_bit(self.reg_af.lo, 4) {
@@ -690,7 +791,10 @@ impl Cpu {
                     self.reg_pc += 2;
                 }
             },
-            0xDE => {},
+            0xDE => {
+                let val = self.get_byte();
+                self.sbc_reg_a(val);
+            }
             0xDF => { self.call_routine(0x0018) },
             0xE0 => { 
                 let address = self.get_byte() as u16 | 0xFF00;
@@ -723,9 +827,8 @@ impl Cpu {
                 self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(address);
             },
             0xF1 => {
-                let val = self.stack_pop();
+                let val = self.stack_pop() & 0xFFF0;
                 self.reg_af.set_pair(val);
-                // TODO: Set flags
             },
             0xF2 => { 
                 let address = self.reg_bc.lo as u16 | 0xFF00;
