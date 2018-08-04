@@ -4,6 +4,7 @@ use instructions::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::io;
 
 pub struct Cpu {
 
@@ -154,9 +155,10 @@ impl Cpu {
     /// Adds src and register A together
     /// and stores the sum in A.
     pub fn add_u8_a(&mut self, src: u8) {
-        let sum = self.reg_af.hi.wrapping_add(src);
+        let a = self.reg_af.hi;
+        let sum = a.wrapping_add(src);
         self.reg_af.hi = sum;
-        self.update_half_carry_flag((((src & 0x0F) + (sum & 0x0F)) & 0x10) == 0x10);
+        self.update_half_carry_flag((((src & 0x0F) + (a & 0x0F)) & 0x10) == 0x10);
         self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
         self.update_zero_flag(sum);
         self.update_subtract_flag(false);
@@ -164,13 +166,14 @@ impl Cpu {
 
     /// Add function with carry bit.
     pub fn adc_reg_a(&mut self, src: u8) {
-        if test_bit(self.reg_af.lo, 4) {
-            let sum = src.wrapping_add(1);
-            self.add_u8_a(sum);
-        }
-        else {
-            self.add_u8_a(src);
-        }
+        let a = self.reg_af.hi;
+        let carry = if test_bit(self.reg_af.lo, 4) { 1 } else { 0 };
+        let sum = a.wrapping_add(src).wrapping_add(carry);
+        self.reg_af.hi = sum;
+        self.update_half_carry_flag((((src & 0x0F) + (a & 0x0F)) + carry & 0x10) == 0x10);
+        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
+        self.update_zero_flag(sum);
+        self.update_subtract_flag(false);
     }
 
     /// Adds a u16 into HL.
@@ -190,6 +193,30 @@ impl Cpu {
         self.update_subtract_flag(false);
     }
 
+    /// Subtracts src from register A
+    /// and stores the sum in A.
+    pub fn sub_u8_a(&mut self, src: u8) {
+        let a = self.reg_af.hi;
+        let sum = a.wrapping_sub(src);
+        self.reg_af.hi = sum;
+        self.update_half_carry_flag((a & 0x0F) < (sum & 0x0F));
+        self.update_carry_flag((src as i32 - sum as i32) < 0);
+        self.update_zero_flag(sum);
+        self.update_subtract_flag(true);
+    }
+
+    /// Subtract function with carry bit.
+    pub fn sbc_reg_a(&mut self, src: u8) {
+        let a = self.reg_af.hi;
+        let carry = if test_bit(self.reg_af.lo, 4) { 1 } else { 0 };
+        let sum = a.wrapping_sub(src).wrapping_sub(carry);
+        self.reg_af.hi = sum;
+        self.update_half_carry_flag((a & 0x0F) < (sum & 0x0F) + carry);
+        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
+        self.update_zero_flag(sum);
+        self.update_subtract_flag(false);
+    }
+
     /// Executes an extended instruction.
     pub fn extended_instruction(&mut self) {
 
@@ -199,7 +226,7 @@ impl Cpu {
     /// then returns the number of cycles it 
     /// took.
     pub fn interpret_opcode(&mut self) {
-
+        
         // Don't run if halted
         if self.halted {
             // Return 4
