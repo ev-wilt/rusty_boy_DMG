@@ -98,11 +98,11 @@ impl Cpu {
     /// Pops a word off the stack.
     pub fn stack_pop(&mut self) -> u16 {
         let prev = self.reg_sp.get_pair();
-        let mut word = (self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair() + 1) as u16) << 8;
-        word |= self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair()) as u16;
+        let mut word = (self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair()) as u16) << 8;
+        word |= self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair() + 1) as u16;
         self.reg_sp.set_pair(prev + 2);
         word
-    }
+    } 
 
     /// Calls a subroutine at a given address.
     pub fn call_routine(&mut self, address: u16) {
@@ -265,6 +265,19 @@ impl Cpu {
         self.reg_af.hi = a;
     }
 
+    /// Rotates a u8's bits left.
+    pub fn rl_u8(&mut self, src: &mut u8) {
+        let carry_occurred = *src >> 7 == 1;
+        *src = *src << 1;
+        if test_bit(self.reg_af.lo, 4) {
+            *src |= 1;
+        }
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(carry_occurred);
+        self.update_zero_flag(*src);
+        self.update_subtract_flag(false);
+    }
+
     /// Executes an extended instruction.
     pub fn extended_instruction(&mut self) {
 
@@ -282,7 +295,10 @@ impl Cpu {
 
         let opcode = self.memory_manager.borrow_mut().read_memory(self.reg_pc);
         self.reg_pc += 1;
-        println!("{:02X}", opcode);
+
+        if opcode != 0x00 {
+            println!("{:02X}", opcode);
+        }
         match opcode {
             0x00 => { /* NOP */ },
             0x01 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_bc) },
@@ -342,7 +358,11 @@ impl Cpu {
                 self.reg_de.hi = d;
             },
             0x16 => { ld_u8_reg(self.get_byte(), &mut self.reg_de.hi) },
-            0x17 => {},
+            0x17 => {
+                let mut val = self.reg_af.hi;
+                self.rl_u8(&mut val);
+                self.reg_af.hi = val;
+            },
             0x18 => { self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16 },
             0x19 => {
                 let mut de = self.reg_de.get_pair();
@@ -418,7 +438,11 @@ impl Cpu {
                 self.reg_hl.lo = l;
             },
             0x2E => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.lo) },
-            0x2F => {},
+            0x2F => { 
+                self.reg_af.hi = !self.reg_af.hi;
+                self.update_subtract_flag(true);
+                self.update_half_carry_flag(true);
+            },
             0x30 => {
                 if !test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
@@ -442,7 +466,11 @@ impl Cpu {
                 let byte = self.get_byte();
                 self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), byte);
             },
-            0x37 => {},
+            0x37 => {
+                self.update_carry_flag(true);
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(false);
+            },
             0x38 => {
                 if test_bit(self.reg_af.lo, 4) {
                     self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
@@ -472,7 +500,12 @@ impl Cpu {
                 self.reg_af.hi = a;
             },
             0x3E => { ld_u8_reg(self.get_byte(), &mut self.reg_af.hi) },
-            0x3F => {},
+            0x3F => {
+                let carry_set = test_bit(self.reg_af.lo, 4);
+                self.update_carry_flag(!carry_set);
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(false);
+            },
             0x40 => { /* LD B, B */ },
             0x41 => { ld_u8_reg(self.reg_bc.lo, &mut self.reg_bc.hi) },
             0x42 => { ld_u8_reg(self.reg_de.hi, &mut self.reg_bc.hi) },
@@ -954,7 +987,15 @@ impl Cpu {
                 self.and_reg_a(val);
             }
             0xE7 => { self.call_routine(0x0020) },
-            0xE8 => {},
+            0xE8 => {
+                let byte = self.get_byte() as i8 as i16 as u16;
+                let sp = self.reg_sp.get_pair();
+                self.reg_sp.set_pair(sp.wrapping_add(byte));
+                self.update_half_carry_flag((byte & 0x000F) + (sp & 0x000F) > 0x000F);
+                self.update_carry_flag((byte & 0x00FF) + (sp & 0x00FF) > 0x00FF);
+                self.update_zero_flag(1);
+                self.update_subtract_flag(false);
+            },
             0xE9 => { self.reg_pc = self.reg_hl.get_pair() },
             0xEA => { 
                 let address = self.get_word();
@@ -987,7 +1028,15 @@ impl Cpu {
                 self.or_reg_a(val);
             }
             0xF7 => { self.call_routine(0x0030) },
-            0xF8 => {},
+            0xF8 => {
+                let byte = self.get_byte() as i8 as i16 as u16;
+                let sp = self.reg_sp.get_pair();
+                self.reg_hl.set_pair(sp.wrapping_add(byte));
+                self.update_half_carry_flag((byte & 0x000F) + (sp & 0x000F) > 0x000F);
+                self.update_carry_flag((byte & 0x00FF) + (sp & 0x00FF) > 0x00FF);
+                self.update_zero_flag(1);
+                self.update_subtract_flag(false);
+            },
             0xF9 => { self.reg_sp.set_pair(self.reg_hl.get_pair()) },
             0xFA => { 
                 let address = self.get_word();
