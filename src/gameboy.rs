@@ -47,15 +47,15 @@ impl Gameboy {
     /// the emulation has stopped.
     pub fn step(&mut self) -> bool {
         let max_cycles = 69905;
-        let cycles_per_step = 0;
+        let mut cycles_per_step = 0;
 
 
         while cycles_per_step < max_cycles {
             if !self.gamepad.poll_events() {
                 return false;
             }
-            let current_cycles = 0;
-            self.cpu.interpret_opcode();
+            let current_cycles = self.cpu.interpret_opcode();
+            cycles_per_step += current_cycles;
             self.memory_manager.borrow_mut().update_timers(current_cycles, &mut self.interrupt_handler);
             self.display_manager.update_display(current_cycles);
             self.interrupt_handler.check_interrupts(&mut self.cpu);
