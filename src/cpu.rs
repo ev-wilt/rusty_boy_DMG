@@ -330,7 +330,7 @@ impl Cpu {
         let opcode = self.memory_manager.borrow_mut().read_memory(self.reg_pc);
         self.reg_pc += 1;
 
-        println!("{}", self.memory_manager.borrow_mut().read_memory(0xFF4B));
+        println!("{:02X}", opcode);
         match opcode {
             0x00 => { /* NOP */ 4 },
             0x01 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_bc); 12 },

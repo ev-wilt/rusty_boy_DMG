@@ -8,6 +8,7 @@ use gamepad::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::io;
 
 pub struct Gameboy {
     pub cpu: Cpu,
@@ -48,7 +49,7 @@ impl Gameboy {
     pub fn step(&mut self) -> bool {
         let max_cycles = 69905;
         let mut cycles_per_step = 0;
-
+        let mut input = String::new();
 
         while cycles_per_step < max_cycles {
             if !self.gamepad.poll_events() {
@@ -59,6 +60,7 @@ impl Gameboy {
             self.memory_manager.borrow_mut().update_timers(current_cycles, &mut self.interrupt_handler);
             self.display_manager.update_display(current_cycles);
             self.interrupt_handler.check_interrupts(&mut self.cpu);
+            io::stdin().read_line(&mut input).unwrap();
         }
         self.display_manager.draw_display();
         true

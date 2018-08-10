@@ -55,9 +55,9 @@ impl DisplayManager {
             let x = i % 160;
             let y = i / 160;
 
-            let red = self.display[y][x][0];
-            let green = self.display[y][x][1];
-            let blue = self.display[y][x][2];
+            let red = self.display[x][y][0];
+            let green = self.display[x][y][1];
+            let blue = self.display[x][y][2];
             self.canvas.set_draw_color(Color::RGB(red, green, blue));
             let _ = self.canvas.fill_rect(Rect::new(x as i32, y as i32, 1, 1));
         }
@@ -106,8 +106,7 @@ impl DisplayManager {
         let scroll_y = self.memory_manager.borrow_mut().read_memory(0xFF42);
         let scroll_x = self.memory_manager.borrow_mut().read_memory(0xFF43);
         let window_y = self.memory_manager.borrow_mut().read_memory(0xFF4A);
-        let window_x = self.memory_manager.borrow_mut().read_memory(0xFF4B) - 7;
-
+        let window_x = self.memory_manager.borrow_mut().read_memory(0xFF4B).wrapping_sub(7);
         let mut window_enabled = false;
         let mut unsigned_data = false;
 
@@ -147,7 +146,7 @@ impl DisplayManager {
             tile_y = self.memory_manager.borrow_mut().read_memory(0xFF44) - window_y;
         }
 
-        let pixel_y = (tile_y / 8) as u8 * 32;
+        let pixel_y = (tile_y / 8) as u16 * 32;
 
         // Draw all horizontal pixels for the 
         // current scanline
@@ -162,9 +161,13 @@ impl DisplayManager {
             let tile_address = tile_map_display + pixel_x as u16 + pixel_y as u16;
             let tile_id: i16;
 
-            // This may need to account for whether the value is signed/unsigned        
-            tile_id = self.memory_manager.borrow_mut().read_memory(tile_address as u16).into();
-
+            if unsigned_data {
+                tile_id = self.memory_manager.borrow_mut().read_memory(tile_address as u16) as i16;
+            }
+            else {
+                tile_id = (self.memory_manager.borrow_mut().read_memory(tile_address as u16) as i8) as i16;
+            }
+            
             let mut tile_loc = bg_window_tile_data as i32;
             if unsigned_data {
                 tile_loc += tile_id as i32 * 16;

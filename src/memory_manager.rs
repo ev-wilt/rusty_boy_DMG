@@ -192,7 +192,7 @@ impl MemoryManager {
         self.div_counter += cycles;
         if self.div_counter >= 255 {
             self.div_counter = 0;
-            self.memory[0xFF04] += 1;
+            self.memory[0xFF04].wrapping_add(1);
         }
     }
 
