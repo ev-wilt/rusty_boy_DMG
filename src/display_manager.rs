@@ -282,7 +282,7 @@ impl DisplayManager {
         if display_control & 1 == 1 {
             self.render_tiles();
         }
-        if display_control & (1 << 1) == 1 {
+        if (display_control & (1 << 1)) >> 1 == 1 {
             self.render_sprites();
         }
     }

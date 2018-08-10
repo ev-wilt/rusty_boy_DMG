@@ -98,7 +98,7 @@ impl MemoryManager {
 
     /// Returns the updated gamepad state.
     pub fn update_gamepad_state(&mut self) -> u8 {
-        let mut gamepad_byte = self.read_memory(0xFF00);
+        let mut gamepad_byte = self.memory[0xFF00];
         gamepad_byte ^= 0xFF;
 
         if gamepad_byte & (1 << 4) >> 4 != 1 {
@@ -198,7 +198,7 @@ impl MemoryManager {
 
     /// Returns whether the clock has been enabled.
     pub fn clock_enabled(&mut self) -> bool {
-        if (self.read_memory(TIMER_CONTROLLER) & 0x02) >> 1 == 1 {
+        if (self.memory[TIMER_CONTROLLER as usize] & 0x02) >> 1 == 1 {
             return true;
         }
         false
@@ -216,13 +216,13 @@ impl MemoryManager {
             if self.timer_counter <= 0 {
                 self.set_frequency();
 
-                if self.read_memory(TIMER) == 0xFF {
-                    let modulator = self.read_memory(TIMER_MODULATOR);
+                if self.memory[TIMER as usize] == 0xFF {
+                    let modulator = self.memory[TIMER_MODULATOR as usize];
                     self.write_memory(TIMER, modulator);
                     interrupt_handler.request_interrupt(2);
                 }
                 else {
-                    let increment_timer = self.read_memory(TIMER);
+                    let increment_timer = self.memory[TIMER as usize];
                     self.write_memory(TIMER, increment_timer);
                 }
             }

@@ -60,7 +60,7 @@ impl Gameboy {
             self.memory_manager.borrow_mut().update_timers(current_cycles, &mut self.interrupt_handler);
             self.display_manager.update_display(current_cycles);
             self.interrupt_handler.check_interrupts(&mut self.cpu);
-            io::stdin().read_line(&mut input).unwrap();
+            // io::stdin().read_line(&mut input).unwrap();
         }
         self.display_manager.draw_display();
         true
