@@ -7,7 +7,7 @@ static TIMER_CONTROLLER: u16 = 0xFF07;
 
 pub struct MemoryManager {
     cartridge: Cartridge,
-    memory: [u8; 0x10000],
+    pub memory: [u8; 0x10000],
     timer_counter: i32,
     div_counter: i32,
     pub gamepad_state: u8

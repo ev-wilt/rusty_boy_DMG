@@ -157,7 +157,7 @@ impl DisplayManager {
                 tile_x = pixel - window_x;
             }
 
-            let pixel_x = tile_x / 8;
+            let pixel_x = (tile_x / 8) as u16;
             let tile_address = tile_map_display + pixel_x as u16 + pixel_y as u16;
             let tile_id: i16;
 
@@ -168,17 +168,17 @@ impl DisplayManager {
                 tile_id = (self.memory_manager.borrow_mut().read_memory(tile_address as u16) as i8) as i16;
             }
             
-            let mut tile_loc = bg_window_tile_data as i32;
+            let mut tile_loc = bg_window_tile_data;
             if unsigned_data {
-                tile_loc += tile_id as i32 * 16;
+                tile_loc += tile_id as u16 * 16;
             }
             else {
-                tile_loc += (tile_id as i32 + 128) * 16;
+                tile_loc += (tile_id as u16 + 128) * 16;
             }
 
             let current_line = (tile_y % 8) * 2;
-            let line_data_lo = self.memory_manager.borrow_mut().read_memory((tile_loc + current_line as i32) as u16);
-            let line_data_hi = self.memory_manager.borrow_mut().read_memory((tile_loc + current_line as i32 + 1) as u16);
+            let line_data_lo = self.memory_manager.borrow_mut().read_memory(tile_loc + current_line as u16);
+            let line_data_hi = self.memory_manager.borrow_mut().read_memory(tile_loc + current_line as u16 + 1);
             let color_loc = ((tile_x as i32 % 8) - 7) * -1;
             let mut color_id = if (line_data_hi & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
             color_id <<= 1;
@@ -303,8 +303,8 @@ impl DisplayManager {
 
         // Move to next scanline
         if self.remaining_cycles <= 0 {
-            let next_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44) + 1;
-            self.memory_manager.borrow_mut().write_memory(0xFF44, next_scanline);
+            self.memory_manager.borrow_mut().memory[0xFF44] += 1;
+            let next_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44);
             self.remaining_cycles = 456;
 
             // V-Blank
