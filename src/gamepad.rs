@@ -82,7 +82,7 @@ impl Gamepad {
         // Check if the key was not set already
         let mut state_changed = false;
 
-        if self.memory_manager.borrow_mut().gamepad_state & (1 << key) >> key == 0 {
+        if (self.memory_manager.borrow_mut().gamepad_state & (1 << key)) >> key == 0 {
             state_changed = true;
         }
 
@@ -100,10 +100,10 @@ impl Gamepad {
         let gamepad_reg = self.memory_manager.borrow_mut().read_memory(0xFF00);
         let mut will_request_interrupt = false;
         
-        if key_is_button && (gamepad_reg & (1 << 5) >> 5) == 0 {
+        if key_is_button && ((gamepad_reg & (1 << 5)) >> 5) == 0 {
             will_request_interrupt = true;
         }
-        else if !key_is_button && (gamepad_reg & (1 << 4) >> 4) == 0 {
+        else if !key_is_button && ((gamepad_reg & (1 << 4)) >> 4) == 0 {
             will_request_interrupt = true;
         }
 

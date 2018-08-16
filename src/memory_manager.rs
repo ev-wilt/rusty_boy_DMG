@@ -101,12 +101,12 @@ impl MemoryManager {
         let mut gamepad_byte = self.memory[0xFF00];
         gamepad_byte ^= 0xFF;
 
-        if gamepad_byte & (1 << 4) >> 4 != 1 {
+        if (gamepad_byte & (1 << 4)) >> 4 != 1 {
             let mut upper_bits = self.gamepad_state >> 4;
             upper_bits |= 0xF0;
             gamepad_byte &= upper_bits;
         }
-        else if gamepad_byte & (1 << 5) >> 5 != 1 {
+        else if (gamepad_byte & (1 << 5)) >> 5 != 1 {
             let mut lower_bits = self.gamepad_state & 0xF;
             lower_bits |= 0xF0;
             gamepad_byte &= lower_bits;            

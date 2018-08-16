@@ -83,14 +83,14 @@ impl DisplayManager {
         let mut color_bits = if (color_palette & (1 << palette_hi)) >> palette_hi == 1 { 1 } else { 0 };
         color_bits <<= 1;
         color_bits |= if (color_palette & (1 << palette_lo)) >> palette_lo == 1 { 1 } else { 0 };
-        let mut color = DisplayColor::White;
+        let color: DisplayColor;
 
         match color_bits {
             0 => { color = DisplayColor::White },
             1 => { color = DisplayColor::LightGray },
             2 => { color = DisplayColor::DarkGray },
             3 => { color = DisplayColor::Black }
-            _ => { println!("Invalid value for color: {}", color_bits); }
+            _ => { panic!("Invalid value for color: {}", color_bits); }
         }
         color
     }
@@ -140,7 +140,7 @@ impl DisplayManager {
         }
 
         if !window_enabled {
-            tile_y = scroll_y + self.memory_manager.borrow_mut().read_memory(0xFF44);
+            tile_y = scroll_y.wrapping_add(self.memory_manager.borrow_mut().read_memory(0xFF44));
         }
         else {
             tile_y = self.memory_manager.borrow_mut().read_memory(0xFF44) - window_y;
@@ -213,11 +213,11 @@ impl DisplayManager {
     pub fn render_sprites(&mut self) {
 
         for current_sprite in 0..40 {
-            let sprite_x = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4)) - 16;
-            let sprite_y = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 1) - 8;
+            let sprite_x = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4)) as u16 as i32 - 16;
+            let sprite_y = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 1) as u16 as i32 - 8;
             let sprite_id = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 2);
             let sprite_attrs = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 3);
-            let current_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44);
+            let current_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44) as i32;
 
             let flip_x = if sprite_attrs & (1 << 5) >> 5 == 1 { true } else { false }; 
             let flip_y = if sprite_attrs & (1 << 6) >> 6 == 1 { true } else { false }; 
@@ -363,7 +363,7 @@ impl DisplayManager {
                 // Set bit 0 to 0, bit 1 to 1
                 display_status |= 1 << 1;
                 display_status &= 0xFE;
-                if display_status & (1 << 5) == 1 {
+                if (display_status & (1 << 5)) >> 5 == 1 {
                     request_interrupt = true;
                 }
             }
@@ -382,7 +382,7 @@ impl DisplayManager {
 
                 // Set bit 0 to 0, bit 1 to 0
                 display_status &= 0xFC;
-                if display_status & (1 << 3) == 1 {
+                if (display_status & (1 << 3)) >> 3 == 1 {
                     request_interrupt = true;
                 }
             }
@@ -395,7 +395,7 @@ impl DisplayManager {
         if current_scanline == self.memory_manager.borrow_mut().read_memory(0xFF45) {
             
             display_status |= 1 << 2;
-            if display_status & (1 << 6) == 1 {
+            if (display_status & (1 << 6) >> 6) == 1 {
                 self.interrupt_handler.request_interrupt(1);
             }
         }
