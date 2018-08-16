@@ -151,172 +151,6 @@ impl Cpu {
         }
     }
 
-    /// Adds src and register A together
-    /// and stores the sum in A.
-    pub fn add_u8_a(&mut self, src: u8) {
-        let a = self.reg_af.hi;
-        let sum = a.wrapping_add(src);
-        self.reg_af.hi = sum;
-        self.update_half_carry_flag((((src & 0x0F) + (a & 0x0F)) & 0x10) == 0x10);
-        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
-        self.update_zero_flag(sum);
-        self.update_subtract_flag(false);
-    }
-
-    /// Add function with carry bit.
-    pub fn adc_reg_a(&mut self, src: u8) {
-        let a = self.reg_af.hi;
-        let carry = if test_bit(self.reg_af.lo, 4) { 1 } else { 0 };
-        let sum = a.wrapping_add(src).wrapping_add(carry);
-        self.reg_af.hi = sum;
-        self.update_half_carry_flag((((src & 0x0F) + (a & 0x0F)) + carry & 0x10) == 0x10);
-        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
-        self.update_zero_flag(sum);
-        self.update_subtract_flag(false);
-    }
-
-    /// Adds a u16 into HL.
-    pub fn add_u16_hl(&mut self, src: &mut u16) {
-        let hl = self.reg_hl.get_pair();
-        self.reg_hl.set_pair(hl.wrapping_add(*src));
-        self.update_half_carry_flag((((*src & 0xFFF) + (hl & 0xFFF)) & 0x100) == 0x100);
-        self.update_carry_flag(*src as u32 + hl as u32 > 0xFFFF);
-        self.update_subtract_flag(false);
-    }
-
-    /// Increments an unsigned 8-bit value.
-    pub fn inc_u8(&mut self, dest: &mut u8) {
-        *dest = dest.wrapping_add(1);
-        self.update_zero_flag(*dest);
-        self.update_half_carry_flag(((1 + (*dest & 0x0F)) & 0x10) == 0x10);
-        self.update_subtract_flag(false);
-    }
-
-    /// Decrements an unsigned 8-bit value.
-    pub fn dec_u8(&mut self, dest: &mut u8) {
-        *dest = dest.wrapping_sub(1);
-        self.update_zero_flag(*dest);
-        self.update_half_carry_flag((*dest & 0x0F) < 1);
-        self.update_subtract_flag(true);
-    }
-
-    /// Subtracts src from register A
-    /// and stores the sum in A.
-    pub fn sub_u8_a(&mut self, src: u8) {
-        let a = self.reg_af.hi;
-        let sum = a.wrapping_sub(src);
-        self.reg_af.hi = sum;
-        self.update_half_carry_flag((a & 0x0F) < (sum & 0x0F));
-        self.update_carry_flag((src as i32 - sum as i32) < 0);
-        self.update_zero_flag(sum);
-        self.update_subtract_flag(true);
-    }
-
-    /// Subtract function with carry bit.
-    pub fn sbc_reg_a(&mut self, src: u8) {
-        let a = self.reg_af.hi;
-        let carry = if test_bit(self.reg_af.lo, 4) { 1 } else { 0 };
-        let sum = a.wrapping_sub(src).wrapping_sub(carry);
-        self.reg_af.hi = sum;
-        self.update_half_carry_flag((a & 0x0F) < (sum & 0x0F) + carry);
-        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
-        self.update_zero_flag(sum);
-        self.update_subtract_flag(false);
-    }
-
-    /// Performs a bitwise AND and saves
-    /// the result in register A.
-    pub fn and_reg_a(&mut self, src: u8) {
-        let res = self.reg_af.hi & src;
-        self.reg_af.hi = res;
-        self.update_half_carry_flag(true);
-        self.update_carry_flag(false);
-        self.update_zero_flag(res);
-        self.update_subtract_flag(false);
-    }
-
-    /// Performs a bitwise OR and saves
-    /// the result in register A.
-    pub fn or_reg_a(&mut self, src: u8) {
-        let res = self.reg_af.hi | src;
-        self.reg_af.hi = res;
-        self.update_half_carry_flag(false);
-        self.update_carry_flag(false);
-        self.update_zero_flag(res);
-        self.update_subtract_flag(false);
-    }
-
-    /// Performs a bitwise XOR and saves
-    /// the result in register A.
-    pub fn xor_reg_a(&mut self, src: u8) {
-        let res = self.reg_af.hi ^ src;
-        self.reg_af.hi = res;
-        self.update_half_carry_flag(false);
-        self.update_carry_flag(false);
-        self.update_zero_flag(res);
-        self.update_subtract_flag(false);
-    }
-
-    /// Compares src to the value in
-    /// register A.
-    pub fn cp_reg_a(&mut self, src: u8) {
-        let a = self.reg_af.hi;
-        self.sub_u8_a(src);
-        self.reg_af.hi = a;
-    }
-
-    /// Rotates a u8's bits left.
-    pub fn rl_u8(&mut self, src: &mut u8) {
-        let carry_occurred = *src >> 7 == 1;
-        *src = *src << 1;
-        if test_bit(self.reg_af.lo, 4) {
-            *src |= 1;
-        }
-        self.update_half_carry_flag(false);
-        self.update_carry_flag(carry_occurred);
-        self.update_zero_flag(*src);
-        self.update_subtract_flag(false);
-    }
-
-    /// Rotates a u8's bits left with carry.
-    pub fn rlc_u8(&mut self, src: &mut u8) {
-        let carry_occurred = *src >> 7 == 1;
-        *src = src.rotate_left(1);
-        self.update_half_carry_flag(false);
-        self.update_carry_flag(carry_occurred);
-        self.update_zero_flag(*src);
-        self.update_subtract_flag(false);
-    }
-
-    /// Rotates a u8's bits right.
-    pub fn rr_u8(&mut self, src: &mut u8) {
-        let carry_occurred = *src & 1 == 1;
-        *src = *src >> 1;
-        if test_bit(self.reg_af.lo, 4) {
-            *src |= 1 << 7;
-        }
-        self.update_half_carry_flag(false);
-        self.update_carry_flag(carry_occurred);
-        self.update_zero_flag(*src);
-        self.update_subtract_flag(false);
-    }
-
-    /// Rotates a u8's bits right with carry.
-    pub fn rrc_u8(&mut self, src: &mut u8) {
-        let carry_occurred = *src & 1 == 1;
-        *src = src.rotate_right(1);
-        self.update_half_carry_flag(false);
-        self.update_carry_flag(carry_occurred);
-        self.update_zero_flag(*src);
-        self.update_subtract_flag(false);
-    }
-
-
-    /// Executes an extended instruction.
-    pub fn extended_instruction(&mut self) -> i32 {
-        0
-    }
-
     /// Moves the PC and executes the next opcode,
     /// then returns the number of cycles it 
     /// took.
@@ -1271,7 +1105,466 @@ impl Cpu {
                 8
             }
             0xFF => { self.call_routine(0x0038); 16 },
-            _ => panic!("Undefined opcode: {:02X}", opcode)
+            _ => panic!("Undefined opcode: 0x{:02X}", opcode)
         }
+    }
+
+    /// Executes an extended instruction.
+    pub fn extended_instruction(&mut self) -> i32 {
+        let opcode = self.get_byte();
+        match opcode {
+            0x00 => { 
+                let mut b = self.reg_bc.hi;
+                self.rlc_u8(&mut b);
+                self.reg_bc.hi = b;
+                8
+            },
+            0x01 => { 
+                let mut c = self.reg_bc.lo;
+                self.rlc_u8(&mut c);
+                self.reg_bc.lo = c;
+                8
+            },
+            0x02 => { 
+                let mut d = self.reg_de.hi;
+                self.rlc_u8(&mut d);
+                self.reg_de.hi = d;
+                8
+            },
+            0x03 => { 
+                let mut e = self.reg_de.lo;
+                self.rlc_u8(&mut e);
+                self.reg_de.lo = e;
+                8
+            },
+            0x04 => { 
+                let mut h = self.reg_hl.hi;
+                self.rlc_u8(&mut h);
+                self.reg_hl.hi = h;
+                8
+            },
+            0x05 => { 
+                let mut l = self.reg_hl.lo;
+                self.rlc_u8(&mut l);
+                self.reg_hl.lo = l;
+                8
+            },
+            0x06 => { 16 },
+            0x08 => { 
+                let mut a = self.reg_af.hi;
+                self.rlc_u8(&mut a);
+                self.reg_af.hi = a;
+                8
+            },
+            0x09 => { 8 },
+            0x0A => { 8 },
+            0x0B => { 8 },
+            0x0C => { 8 },
+            0x0D => { 8 },
+            0x0E => { 16 },
+            0x0F => { 8 },
+            0x10 => { 8 },
+            0x11 => { 8 },
+            0x12 => { 8 },
+            0x13 => { 8 },
+            0x14 => { 8 },
+            0x15 => { 8 },
+            0x16 => { 16 },
+            0x17 => { 8 },
+            0x18 => { 8 },
+            0x19 => { 8 },
+            0x1A => { 8 },
+            0x1B => { 8 },
+            0x1C => { 8 },
+            0x1D => { 8 },
+            0x1E => { 16 },
+            0x1F => { 8 },
+            0x20 => { 8 },
+            0x21 => { 8 },
+            0x22 => { 8 },
+            0x23 => { 8 },
+            0x24 => { 8 },
+            0x25 => { 8 },
+            0x26 => { 16 },
+            0x27 => { 8 },
+            0x28 => { 8 },
+            0x29 => { 8 },
+            0x2A => { 8 },
+            0x2B => { 8 },
+            0x2C => { 8 },
+            0x2D => { 8 },
+            0x2E => { 16 },
+            0x2F => { 8 },
+            0x30 => { 8 },
+            0x31 => { 8 },
+            0x32 => { 8 },
+            0x33 => { 8 },
+            0x34 => { 8 },
+            0x35 => { 8 },
+            0x36 => { 16 },
+            0x37 => { 8 },
+            0x38 => { 8 },
+            0x39 => { 8 },
+            0x3A => { 8 },
+            0x3B => { 8 },
+            0x3C => { 8 },
+            0x3D => { 8 },
+            0x3E => { 16 },
+            0x3F => { 8 },
+            0x40 => { 8 },
+            0x41 => { 8 },
+            0x42 => { 8 },
+            0x43 => { 8 },
+            0x44 => { 8 },
+            0x45 => { 8 },
+            0x46 => { 16 },
+            0x47 => { 8 },
+            0x48 => { 8 },
+            0x49 => { 8 },
+            0x4A => { 8 },
+            0x4B => { 8 },
+            0x4C => { 8 },
+            0x4D => { 8 },
+            0x4E => { 16 },
+            0x4F => { 8 },
+            0x50 => { 8 },
+            0x51 => { 8 },
+            0x52 => { 8 },
+            0x53 => { 8 },
+            0x54 => { 8 },
+            0x55 => { 8 },
+            0x56 => { 16 },
+            0x57 => { 8 },
+            0x58 => { 8 },
+            0x59 => { 8 },
+            0x5A => { 8 },
+            0x5B => { 8 },
+            0x5C => { 8 },
+            0x5D => { 8 },
+            0x5E => { 16 },
+            0x5F => { 8 },
+            0x60 => { 8 },
+            0x61 => { 8 },
+            0x62 => { 8 },
+            0x63 => { 8 },
+            0x64 => { 8 },
+            0x65 => { 8 },
+            0x66 => { 16 },
+            0x67 => { 8 },
+            0x68 => { 8 },
+            0x69 => { 8 },
+            0x6A => { 8 },
+            0x6B => { 8 },
+            0x6C => { 8 },
+            0x6D => { 8 },
+            0x6E => { 16 },
+            0x6F => { 8 },
+            0x70 => { 8 },
+            0x71 => { 8 },
+            0x72 => { 8 },
+            0x73 => { 8 },
+            0x74 => { 8 },
+            0x75 => { 8 },
+            0x76 => { 16 },
+            0x77 => { 8 },
+            0x78 => { 8 },
+            0x79 => { 8 },
+            0x7A => { 8 },
+            0x7B => { 8 },
+            0x7C => { 8 },
+            0x7D => { 8 },
+            0x7E => { 16 },
+            0x7F => { 8 },
+            0x80 => { 8 },
+            0x81 => { 8 },
+            0x82 => { 8 },
+            0x83 => { 8 },
+            0x84 => { 8 },
+            0x85 => { 8 },
+            0x86 => { 16 },
+            0x87 => { 8 },
+            0x88 => { 8 },
+            0x89 => { 8 },
+            0x8A => { 8 },
+            0x8B => { 8 },
+            0x8C => { 8 },
+            0x8D => { 8 },
+            0x8E => { 16 },
+            0x8F => { 8 },
+            0x90 => { 8 },
+            0x91 => { 8 },
+            0x92 => { 8 },
+            0x93 => { 8 },
+            0x94 => { 8 },
+            0x95 => { 8 },
+            0x96 => { 16 },
+            0x97 => { 8 },
+            0x98 => { 8 },
+            0x99 => { 8 },
+            0x9A => { 8 },
+            0x9B => { 8 },
+            0x9C => { 8 },
+            0x9D => { 8 },
+            0x9E => { 16 },
+            0x9F => { 8 },
+            0xA0 => { 8 },
+            0xA1 => { 8 },
+            0xA2 => { 8 },
+            0xA3 => { 8 },
+            0xA4 => { 8 },
+            0xA5 => { 8 },
+            0xA6 => { 16 },
+            0xA7 => { 8 },
+            0xA8 => { 8 },
+            0xA9 => { 8 },
+            0xAA => { 8 },
+            0xAB => { 8 },
+            0xAC => { 8 },
+            0xAD => { 8 },
+            0xAE => { 16 },
+            0xAF => { 8 },
+            0xB0 => { 8 },
+            0xB1 => { 8 },
+            0xB2 => { 8 },
+            0xB3 => { 8 },
+            0xB4 => { 8 },
+            0xB5 => { 8 },
+            0xB6 => { 16 },
+            0xB7 => { 8 },
+            0xB8 => { 8 },
+            0xB9 => { 8 },
+            0xBA => { 8 },
+            0xBB => { 8 },
+            0xBC => { 8 },
+            0xBD => { 8 },
+            0xBE => { 16 },
+            0xBF => { 8 },
+            0xC0 => { 8 },
+            0xC1 => { 8 },
+            0xC2 => { 8 },
+            0xC3 => { 8 },
+            0xC4 => { 8 },
+            0xC5 => { 8 },
+            0xC6 => { 16 },
+            0xC7 => { 8 },
+            0xC8 => { 8 },
+            0xC9 => { 8 },
+            0xCA => { 8 },
+            0xCB => { 8 },
+            0xCC => { 8 },
+            0xCD => { 8 },
+            0xCE => { 16 },
+            0xCF => { 8 },
+            0xD0 => { 8 },
+            0xD1 => { 8 },
+            0xD2 => { 8 },
+            0xD3 => { 8 },
+            0xD4 => { 8 },
+            0xD5 => { 8 },
+            0xD6 => { 16 },
+            0xD7 => { 8 },
+            0xD8 => { 8 },
+            0xD9 => { 8 },
+            0xDA => { 8 },
+            0xDB => { 8 },
+            0xDC => { 8 },
+            0xDD => { 8 },
+            0xDE => { 16 },
+            0xDF => { 8 },
+            0xE0 => { 8 },
+            0xE1 => { 8 },
+            0xE2 => { 8 },
+            0xE3 => { 8 },
+            0xE4 => { 8 },
+            0xE5 => { 8 },
+            0xE6 => { 16 },
+            0xE7 => { 8 },
+            0xE8 => { 8 },
+            0xE9 => { 8 },
+            0xEA => { 8 },
+            0xEB => { 8 },
+            0xEC => { 8 },
+            0xED => { 8 },
+            0xEE => { 16 },
+            0xEF => { 8 },
+            0xF0 => { 8 },
+            0xF1 => { 8 },
+            0xF2 => { 8 },
+            0xF3 => { 8 },
+            0xF4 => { 8 },
+            0xF5 => { 8 },
+            0xF6 => { 16 },
+            0xF7 => { 8 },
+            0xF8 => { 8 },
+            0xF9 => { 8 },
+            0xFA => { 8 },
+            0xFB => { 8 },
+            0xFC => { 8 },
+            0xFD => { 8 },
+            0xFE => { 16 },
+            0xFF => { 8 },
+            _ => panic!("Undefined extended opcode: 0x{:02X}", opcode)
+        }
+    }
+
+
+    /// Adds src and register A together
+    /// and stores the sum in A.
+    pub fn add_u8_a(&mut self, src: u8) {
+        let a = self.reg_af.hi;
+        let sum = a.wrapping_add(src);
+        self.reg_af.hi = sum;
+        self.update_half_carry_flag((((src & 0x0F) + (a & 0x0F)) & 0x10) == 0x10);
+        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
+        self.update_zero_flag(sum);
+        self.update_subtract_flag(false);
+    }
+
+    /// Add function with carry bit.
+    pub fn adc_reg_a(&mut self, src: u8) {
+        let a = self.reg_af.hi;
+        let carry = if test_bit(self.reg_af.lo, 4) { 1 } else { 0 };
+        let sum = a.wrapping_add(src).wrapping_add(carry);
+        self.reg_af.hi = sum;
+        self.update_half_carry_flag((((src & 0x0F) + (a & 0x0F)) + carry & 0x10) == 0x10);
+        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
+        self.update_zero_flag(sum);
+        self.update_subtract_flag(false);
+    }
+
+    /// Adds a u16 into HL.
+    pub fn add_u16_hl(&mut self, src: &mut u16) {
+        let hl = self.reg_hl.get_pair();
+        self.reg_hl.set_pair(hl.wrapping_add(*src));
+        self.update_half_carry_flag((((*src & 0xFFF) + (hl & 0xFFF)) & 0x100) == 0x100);
+        self.update_carry_flag(*src as u32 + hl as u32 > 0xFFFF);
+        self.update_subtract_flag(false);
+    }
+
+    /// Increments an unsigned 8-bit value.
+    pub fn inc_u8(&mut self, dest: &mut u8) {
+        *dest = dest.wrapping_add(1);
+        self.update_zero_flag(*dest);
+        self.update_half_carry_flag(((1 + (*dest & 0x0F)) & 0x10) == 0x10);
+        self.update_subtract_flag(false);
+    }
+
+    /// Decrements an unsigned 8-bit value.
+    pub fn dec_u8(&mut self, dest: &mut u8) {
+        *dest = dest.wrapping_sub(1);
+        self.update_zero_flag(*dest);
+        self.update_half_carry_flag((*dest & 0x0F) < 1);
+        self.update_subtract_flag(true);
+    }
+
+    /// Subtracts src from register A
+    /// and stores the sum in A.
+    pub fn sub_u8_a(&mut self, src: u8) {
+        let a = self.reg_af.hi;
+        let sum = a.wrapping_sub(src);
+        self.reg_af.hi = sum;
+        self.update_half_carry_flag((a & 0x0F) < (sum & 0x0F));
+        self.update_carry_flag((src as i32 - sum as i32) < 0);
+        self.update_zero_flag(sum);
+        self.update_subtract_flag(true);
+    }
+
+    /// Subtract function with carry bit.
+    pub fn sbc_reg_a(&mut self, src: u8) {
+        let a = self.reg_af.hi;
+        let carry = if test_bit(self.reg_af.lo, 4) { 1 } else { 0 };
+        let sum = a.wrapping_sub(src).wrapping_sub(carry);
+        self.reg_af.hi = sum;
+        self.update_half_carry_flag((a & 0x0F) < (sum & 0x0F) + carry);
+        self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
+        self.update_zero_flag(sum);
+        self.update_subtract_flag(false);
+    }
+
+    /// Performs a bitwise AND and saves
+    /// the result in register A.
+    pub fn and_reg_a(&mut self, src: u8) {
+        let res = self.reg_af.hi & src;
+        self.reg_af.hi = res;
+        self.update_half_carry_flag(true);
+        self.update_carry_flag(false);
+        self.update_zero_flag(res);
+        self.update_subtract_flag(false);
+    }
+
+    /// Performs a bitwise OR and saves
+    /// the result in register A.
+    pub fn or_reg_a(&mut self, src: u8) {
+        let res = self.reg_af.hi | src;
+        self.reg_af.hi = res;
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(false);
+        self.update_zero_flag(res);
+        self.update_subtract_flag(false);
+    }
+
+    /// Performs a bitwise XOR and saves
+    /// the result in register A.
+    pub fn xor_reg_a(&mut self, src: u8) {
+        let res = self.reg_af.hi ^ src;
+        self.reg_af.hi = res;
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(false);
+        self.update_zero_flag(res);
+        self.update_subtract_flag(false);
+    }
+
+    /// Compares src to the value in
+    /// register A.
+    pub fn cp_reg_a(&mut self, src: u8) {
+        let a = self.reg_af.hi;
+        self.sub_u8_a(src);
+        self.reg_af.hi = a;
+    }
+
+    /// Rotates a u8's bits left.
+    pub fn rl_u8(&mut self, src: &mut u8) {
+        let carry_occurred = *src >> 7 == 1;
+        *src = *src << 1;
+        if test_bit(self.reg_af.lo, 4) {
+            *src |= 1;
+        }
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(carry_occurred);
+        self.update_zero_flag(*src);
+        self.update_subtract_flag(false);
+    }
+
+    /// Rotates a u8's bits left with carry.
+    pub fn rlc_u8(&mut self, src: &mut u8) {
+        let carry_occurred = *src >> 7 == 1;
+        *src = src.rotate_left(1);
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(carry_occurred);
+        self.update_zero_flag(*src);
+        self.update_subtract_flag(false);
+    }
+
+    /// Rotates a u8's bits right.
+    pub fn rr_u8(&mut self, src: &mut u8) {
+        let carry_occurred = *src & 1 == 1;
+        *src = *src >> 1;
+        if test_bit(self.reg_af.lo, 4) {
+            *src |= 1 << 7;
+        }
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(carry_occurred);
+        self.update_zero_flag(*src);
+        self.update_subtract_flag(false);
+    }
+
+    /// Rotates a u8's bits right with carry.
+    pub fn rrc_u8(&mut self, src: &mut u8) {
+        let carry_occurred = *src & 1 == 1;
+        *src = src.rotate_right(1);
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(carry_occurred);
+        self.update_zero_flag(*src);
+        self.update_subtract_flag(false);
     }
 }
