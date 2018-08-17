@@ -1150,35 +1150,141 @@ impl Cpu {
                 8
             },
             0x06 => { 16 },
-            0x08 => { 
+            0x07 => { 
                 let mut a = self.reg_af.hi;
                 self.rlc_u8(&mut a);
                 self.reg_af.hi = a;
                 8
             },
-            0x09 => { 8 },
-            0x0A => { 8 },
-            0x0B => { 8 },
-            0x0C => { 8 },
-            0x0D => { 8 },
+            0x08 => { 
+                let mut b = self.reg_bc.hi;
+                self.rrc_u8(&mut b);
+                self.reg_bc.hi = b;
+                8
+            },
+            0x09 => { 
+                let mut c = self.reg_bc.lo;
+                self.rrc_u8(&mut c);
+                self.reg_bc.lo = c;
+                8
+            },
+            0x0A => { 
+                let mut d = self.reg_de.hi;
+                self.rrc_u8(&mut d);
+                self.reg_de.hi = d;
+                8
+            },
+            0x0B => { 
+                let mut e = self.reg_de.lo;
+                self.rrc_u8(&mut e);
+                self.reg_de.lo = e;
+                8
+            },
+            0x0C => { 
+                let mut h = self.reg_hl.hi;
+                self.rrc_u8(&mut h);
+                self.reg_hl.hi = h;
+                8
+            },
+            0x0D => { 
+                let mut l = self.reg_hl.lo;
+                self.rrc_u8(&mut l);
+                self.reg_hl.lo = l;
+                8
+            },
             0x0E => { 16 },
-            0x0F => { 8 },
-            0x10 => { 8 },
-            0x11 => { 8 },
-            0x12 => { 8 },
-            0x13 => { 8 },
-            0x14 => { 8 },
-            0x15 => { 8 },
+            0x0F => { 
+                let mut a = self.reg_af.hi;
+                self.rrc_u8(&mut a);
+                self.reg_af.hi = a;
+                8
+            },
+            0x10 => { 
+                let mut b = self.reg_bc.hi;
+                self.rl_u8(&mut b);
+                self.reg_bc.hi = b;
+                8
+            },
+            0x11 => { 
+                let mut c = self.reg_bc.lo;
+                self.rl_u8(&mut c);
+                self.reg_bc.lo = c;
+                8
+            },
+            0x12 => { 
+                let mut d = self.reg_de.hi;
+                self.rl_u8(&mut d);
+                self.reg_de.hi = d;
+                8
+            },
+            0x13 => { 
+                let mut e = self.reg_de.lo;
+                self.rl_u8(&mut e);
+                self.reg_de.lo = e;
+                8
+            },
+            0x14 => { 
+                let mut h = self.reg_hl.hi;
+                self.rl_u8(&mut h);
+                self.reg_hl.hi = h;
+                8
+            },
+            0x15 => { 
+                let mut l = self.reg_hl.lo;
+                self.rl_u8(&mut l);
+                self.reg_hl.lo = l;
+                8
+            },
             0x16 => { 16 },
-            0x17 => { 8 },
-            0x18 => { 8 },
-            0x19 => { 8 },
-            0x1A => { 8 },
-            0x1B => { 8 },
-            0x1C => { 8 },
-            0x1D => { 8 },
+            0x17 => { 
+                let mut a = self.reg_af.hi;
+                self.rl_u8(&mut a);
+                self.reg_af.hi = a;
+                8
+            },
+            0x18 => { 
+                let mut b = self.reg_bc.hi;
+                self.rr_u8(&mut b);
+                self.reg_bc.hi = b;
+                8
+            },
+            0x19 => { 
+                let mut c = self.reg_bc.lo;
+                self.rr_u8(&mut c);
+                self.reg_bc.lo = c;
+                8
+            },
+            0x1A => { 
+                let mut d = self.reg_de.hi;
+                self.rr_u8(&mut d);
+                self.reg_de.hi = d;
+                8
+            },
+            0x1B => { 
+                let mut e = self.reg_de.lo;
+                self.rr_u8(&mut e);
+                self.reg_de.lo = e;
+                8
+            },
+            0x1C => { 
+                let mut h = self.reg_hl.hi;
+                self.rr_u8(&mut h);
+                self.reg_hl.hi = h;
+                8
+            },
+            0x1D => { 
+                let mut l = self.reg_hl.lo;
+                self.rr_u8(&mut l);
+                self.reg_hl.lo = l;
+                8
+            },
             0x1E => { 16 },
-            0x1F => { 8 },
+            0x1F => { 
+                let mut a = self.reg_af.hi;
+                self.rr_u8(&mut a);
+                self.reg_af.hi = a;
+                8
+            },
             0x20 => { 8 },
             0x21 => { 8 },
             0x22 => { 8 },
@@ -1275,134 +1381,134 @@ impl Cpu {
             0x7D => { 8 },
             0x7E => { 16 },
             0x7F => { 8 },
-            0x80 => { 8 },
-            0x81 => { 8 },
-            0x82 => { 8 },
-            0x83 => { 8 },
-            0x84 => { 8 },
-            0x85 => { 8 },
+            0x80 => { reset_bit(&mut self.reg_bc.hi, 0); 8 },
+            0x81 => { reset_bit(&mut self.reg_bc.lo, 0); 8 },
+            0x82 => { reset_bit(&mut self.reg_de.hi, 0); 8 },
+            0x83 => { reset_bit(&mut self.reg_de.lo, 0); 8 },
+            0x84 => { reset_bit(&mut self.reg_hl.hi, 0); 8 },
+            0x85 => { reset_bit(&mut self.reg_hl.lo, 0); 8 },
             0x86 => { 16 },
-            0x87 => { 8 },
-            0x88 => { 8 },
-            0x89 => { 8 },
-            0x8A => { 8 },
-            0x8B => { 8 },
-            0x8C => { 8 },
-            0x8D => { 8 },
+            0x87 => { reset_bit(&mut self.reg_af.hi, 0); 8 },
+            0x88 => { reset_bit(&mut self.reg_bc.hi, 1); 8 },
+            0x89 => { reset_bit(&mut self.reg_bc.lo, 1); 8 },
+            0x8A => { reset_bit(&mut self.reg_de.hi, 1); 8 },
+            0x8B => { reset_bit(&mut self.reg_de.lo, 1); 8 },
+            0x8C => { reset_bit(&mut self.reg_hl.hi, 1); 8 },
+            0x8D => { reset_bit(&mut self.reg_hl.lo, 1); 8 },
             0x8E => { 16 },
-            0x8F => { 8 },
-            0x90 => { 8 },
-            0x91 => { 8 },
-            0x92 => { 8 },
-            0x93 => { 8 },
-            0x94 => { 8 },
-            0x95 => { 8 },
+            0x8F => { reset_bit(&mut self.reg_af.hi, 1); 8 },
+            0x90 => { reset_bit(&mut self.reg_bc.hi, 2); 8 },
+            0x91 => { reset_bit(&mut self.reg_bc.lo, 2); 8 },
+            0x92 => { reset_bit(&mut self.reg_de.hi, 2); 8 },
+            0x93 => { reset_bit(&mut self.reg_de.lo, 2); 8 },
+            0x94 => { reset_bit(&mut self.reg_hl.hi, 2); 8 },
+            0x95 => { reset_bit(&mut self.reg_hl.lo, 2); 8 },
             0x96 => { 16 },
-            0x97 => { 8 },
-            0x98 => { 8 },
-            0x99 => { 8 },
-            0x9A => { 8 },
-            0x9B => { 8 },
-            0x9C => { 8 },
-            0x9D => { 8 },
+            0x97 => { reset_bit(&mut self.reg_af.hi, 2); 8 },
+            0x98 => { reset_bit(&mut self.reg_bc.hi, 3); 8 },
+            0x99 => { reset_bit(&mut self.reg_bc.lo, 3); 8 },
+            0x9A => { reset_bit(&mut self.reg_de.hi, 3); 8 },
+            0x9B => { reset_bit(&mut self.reg_de.lo, 3); 8 },
+            0x9C => { reset_bit(&mut self.reg_hl.hi, 3); 8 },
+            0x9D => { reset_bit(&mut self.reg_hl.lo, 3); 8 },
             0x9E => { 16 },
-            0x9F => { 8 },
-            0xA0 => { 8 },
-            0xA1 => { 8 },
-            0xA2 => { 8 },
-            0xA3 => { 8 },
-            0xA4 => { 8 },
-            0xA5 => { 8 },
+            0x9F => { reset_bit(&mut self.reg_af.hi, 3); 8 },
+            0xA0 => { reset_bit(&mut self.reg_bc.hi, 4); 8 },
+            0xA1 => { reset_bit(&mut self.reg_bc.lo, 4); 8 },
+            0xA2 => { reset_bit(&mut self.reg_de.hi, 4); 8 },
+            0xA3 => { reset_bit(&mut self.reg_de.lo, 4); 8 },
+            0xA4 => { reset_bit(&mut self.reg_hl.hi, 4); 8 },
+            0xA5 => { reset_bit(&mut self.reg_hl.lo, 4); 8 },
             0xA6 => { 16 },
-            0xA7 => { 8 },
-            0xA8 => { 8 },
-            0xA9 => { 8 },
-            0xAA => { 8 },
-            0xAB => { 8 },
-            0xAC => { 8 },
-            0xAD => { 8 },
+            0xA7 => { reset_bit(&mut self.reg_af.hi, 4); 8 },
+            0xA8 => { reset_bit(&mut self.reg_bc.hi, 5); 8 },
+            0xA9 => { reset_bit(&mut self.reg_bc.lo, 5); 8 },
+            0xAA => { reset_bit(&mut self.reg_de.hi, 5); 8 },
+            0xAB => { reset_bit(&mut self.reg_de.lo, 5); 8 },
+            0xAC => { reset_bit(&mut self.reg_hl.hi, 5); 8 },
+            0xAD => { reset_bit(&mut self.reg_hl.lo, 5); 8 },
             0xAE => { 16 },
-            0xAF => { 8 },
-            0xB0 => { 8 },
-            0xB1 => { 8 },
-            0xB2 => { 8 },
-            0xB3 => { 8 },
-            0xB4 => { 8 },
-            0xB5 => { 8 },
+            0xAF => { reset_bit(&mut self.reg_af.hi, 5); 8 },
+            0xB0 => { reset_bit(&mut self.reg_bc.hi, 6); 8 },
+            0xB1 => { reset_bit(&mut self.reg_bc.lo, 6); 8 },
+            0xB2 => { reset_bit(&mut self.reg_de.hi, 6); 8 },
+            0xB3 => { reset_bit(&mut self.reg_de.lo, 6); 8 },
+            0xB4 => { reset_bit(&mut self.reg_hl.hi, 6); 8 },
+            0xB5 => { reset_bit(&mut self.reg_hl.lo, 6); 8 },
             0xB6 => { 16 },
-            0xB7 => { 8 },
-            0xB8 => { 8 },
-            0xB9 => { 8 },
-            0xBA => { 8 },
-            0xBB => { 8 },
-            0xBC => { 8 },
-            0xBD => { 8 },
+            0xB7 => { reset_bit(&mut self.reg_af.hi, 6); 8 },
+            0xB8 => { reset_bit(&mut self.reg_bc.hi, 7); 8 },
+            0xB9 => { reset_bit(&mut self.reg_bc.lo, 7); 8 },
+            0xBA => { reset_bit(&mut self.reg_de.hi, 7); 8 },
+            0xBB => { reset_bit(&mut self.reg_de.lo, 7); 8 },
+            0xBC => { reset_bit(&mut self.reg_hl.hi, 7); 8 },
+            0xBD => { reset_bit(&mut self.reg_hl.lo, 7); 8 },
             0xBE => { 16 },
-            0xBF => { 8 },
-            0xC0 => { 8 },
-            0xC1 => { 8 },
-            0xC2 => { 8 },
-            0xC3 => { 8 },
-            0xC4 => { 8 },
-            0xC5 => { 8 },
+            0xBF => { reset_bit(&mut self.reg_af.hi, 7); 8 },
+            0xC0 => { set_bit(&mut self.reg_bc.hi, 0); 8 },
+            0xC1 => { set_bit(&mut self.reg_bc.lo, 0); 8 },
+            0xC2 => { set_bit(&mut self.reg_de.hi, 0); 8 },
+            0xC3 => { set_bit(&mut self.reg_de.lo, 0); 8 },
+            0xC4 => { set_bit(&mut self.reg_hl.hi, 0); 8 },
+            0xC5 => { set_bit(&mut self.reg_hl.lo, 0); 8 },
             0xC6 => { 16 },
-            0xC7 => { 8 },
-            0xC8 => { 8 },
-            0xC9 => { 8 },
-            0xCA => { 8 },
-            0xCB => { 8 },
-            0xCC => { 8 },
-            0xCD => { 8 },
+            0xC7 => { set_bit(&mut self.reg_af.hi, 0); 8 },
+            0xC8 => { set_bit(&mut self.reg_bc.hi, 1); 8 },
+            0xC9 => { set_bit(&mut self.reg_bc.lo, 1); 8 },
+            0xCA => { set_bit(&mut self.reg_de.hi, 1); 8 },
+            0xCB => { set_bit(&mut self.reg_de.lo, 1); 8 },
+            0xCC => { set_bit(&mut self.reg_hl.hi, 1); 8 },
+            0xCD => { set_bit(&mut self.reg_hl.lo, 1); 8 },
             0xCE => { 16 },
-            0xCF => { 8 },
-            0xD0 => { 8 },
-            0xD1 => { 8 },
-            0xD2 => { 8 },
-            0xD3 => { 8 },
-            0xD4 => { 8 },
-            0xD5 => { 8 },
+            0xCF => { set_bit(&mut self.reg_af.hi, 1); 8 },
+            0xD0 => { set_bit(&mut self.reg_bc.hi, 2); 8 },
+            0xD1 => { set_bit(&mut self.reg_bc.lo, 2); 8 },
+            0xD2 => { set_bit(&mut self.reg_de.hi, 2); 8 },
+            0xD3 => { set_bit(&mut self.reg_de.lo, 2); 8 },
+            0xD4 => { set_bit(&mut self.reg_hl.hi, 2); 8 },
+            0xD5 => { set_bit(&mut self.reg_hl.lo, 2); 8 },
             0xD6 => { 16 },
-            0xD7 => { 8 },
-            0xD8 => { 8 },
-            0xD9 => { 8 },
-            0xDA => { 8 },
-            0xDB => { 8 },
-            0xDC => { 8 },
-            0xDD => { 8 },
+            0xD7 => { set_bit(&mut self.reg_af.hi, 2); 8 },
+            0xD8 => { set_bit(&mut self.reg_bc.hi, 3); 8 },
+            0xD9 => { set_bit(&mut self.reg_bc.lo, 3); 8 },
+            0xDA => { set_bit(&mut self.reg_de.hi, 3); 8 },
+            0xDB => { set_bit(&mut self.reg_de.lo, 3); 8 },
+            0xDC => { set_bit(&mut self.reg_hl.hi, 3); 8 },
+            0xDD => { set_bit(&mut self.reg_hl.lo, 3); 8 },
             0xDE => { 16 },
-            0xDF => { 8 },
-            0xE0 => { 8 },
-            0xE1 => { 8 },
-            0xE2 => { 8 },
-            0xE3 => { 8 },
-            0xE4 => { 8 },
-            0xE5 => { 8 },
+            0xDF => { set_bit(&mut self.reg_af.hi, 3); 8 },
+            0xE0 => { set_bit(&mut self.reg_bc.hi, 4); 8 },
+            0xE1 => { set_bit(&mut self.reg_bc.lo, 4); 8 },
+            0xE2 => { set_bit(&mut self.reg_de.hi, 4); 8 },
+            0xE3 => { set_bit(&mut self.reg_de.lo, 4); 8 },
+            0xE4 => { set_bit(&mut self.reg_hl.hi, 4); 8 },
+            0xE5 => { set_bit(&mut self.reg_hl.lo, 4); 8 },
             0xE6 => { 16 },
-            0xE7 => { 8 },
-            0xE8 => { 8 },
-            0xE9 => { 8 },
-            0xEA => { 8 },
-            0xEB => { 8 },
-            0xEC => { 8 },
-            0xED => { 8 },
+            0xE7 => { set_bit(&mut self.reg_af.hi, 4); 8 },
+            0xE8 => { set_bit(&mut self.reg_bc.hi, 5); 8 },
+            0xE9 => { set_bit(&mut self.reg_bc.lo, 5); 8 },
+            0xEA => { set_bit(&mut self.reg_de.hi, 5); 8 },
+            0xEB => { set_bit(&mut self.reg_de.lo, 5); 8 },
+            0xEC => { set_bit(&mut self.reg_hl.hi, 5); 8 },
+            0xED => { set_bit(&mut self.reg_hl.lo, 5); 8 },
             0xEE => { 16 },
-            0xEF => { 8 },
-            0xF0 => { 8 },
-            0xF1 => { 8 },
-            0xF2 => { 8 },
-            0xF3 => { 8 },
-            0xF4 => { 8 },
-            0xF5 => { 8 },
+            0xEF => { set_bit(&mut self.reg_af.hi, 5); 8 },
+            0xF0 => { set_bit(&mut self.reg_bc.hi, 6); 8 },
+            0xF1 => { set_bit(&mut self.reg_bc.lo, 6); 8 },
+            0xF2 => { set_bit(&mut self.reg_de.hi, 6); 8 },
+            0xF3 => { set_bit(&mut self.reg_de.lo, 6); 8 },
+            0xF4 => { set_bit(&mut self.reg_hl.hi, 6); 8 },
+            0xF5 => { set_bit(&mut self.reg_hl.lo, 6); 8 },
             0xF6 => { 16 },
-            0xF7 => { 8 },
-            0xF8 => { 8 },
-            0xF9 => { 8 },
-            0xFA => { 8 },
-            0xFB => { 8 },
-            0xFC => { 8 },
-            0xFD => { 8 },
+            0xF7 => { set_bit(&mut self.reg_af.hi, 6); 8 },
+            0xF8 => { set_bit(&mut self.reg_bc.hi, 7); 8 },
+            0xF9 => { set_bit(&mut self.reg_bc.lo, 7); 8 },
+            0xFA => { set_bit(&mut self.reg_de.hi, 7); 8 },
+            0xFB => { set_bit(&mut self.reg_de.lo, 7); 8 },
+            0xFC => { set_bit(&mut self.reg_hl.hi, 7); 8 },
+            0xFD => { set_bit(&mut self.reg_hl.lo, 7); 8 },
             0xFE => { 16 },
-            0xFF => { 8 },
+            0xFF => { set_bit(&mut self.reg_af.hi, 7); 8 },
             _ => panic!("Undefined extended opcode: 0x{:02X}", opcode)
         }
     }
