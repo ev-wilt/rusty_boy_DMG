@@ -112,8 +112,8 @@ impl Cpu {
     }
 
     /// Updates the bit for the zero flag.
-    pub fn update_zero_flag(&mut self, result: u8) {
-        if result == 0 {
+    pub fn update_zero_flag(&mut self, result: bool) {
+        if result {
             set_bit(&mut self.reg_af.lo, 7);
         }
         else {
@@ -1039,7 +1039,7 @@ impl Cpu {
                 self.reg_sp.set_pair(sp.wrapping_add(byte));
                 self.update_half_carry_flag((byte & 0x000F) + (sp & 0x000F) > 0x000F);
                 self.update_carry_flag((byte & 0x00FF) + (sp & 0x00FF) > 0x00FF);
-                self.update_zero_flag(1);
+                self.update_zero_flag(false);
                 self.update_subtract_flag(false);
                 16
             },
@@ -1088,7 +1088,7 @@ impl Cpu {
                 self.reg_hl.set_pair(sp.wrapping_add(byte));
                 self.update_half_carry_flag((byte & 0x000F) + (sp & 0x000F) > 0x000F);
                 self.update_carry_flag((byte & 0x00FF) + (sp & 0x00FF) > 0x00FF);
-                self.update_zero_flag(1);
+                self.update_zero_flag(false);
                 self.update_subtract_flag(false);
                 12
             },
@@ -1149,7 +1149,12 @@ impl Cpu {
                 self.reg_hl.lo = l;
                 8
             },
-            0x06 => { 16 },
+            0x06 => {
+                let mut byte = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.rlc_u8(&mut byte);
+                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = byte;
+                16
+            },
             0x07 => { 
                 let mut a = self.reg_af.hi;
                 self.rlc_u8(&mut a);
@@ -1192,7 +1197,12 @@ impl Cpu {
                 self.reg_hl.lo = l;
                 8
             },
-            0x0E => { 16 },
+            0x0E => {
+                let mut byte = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.rrc_u8(&mut byte);
+                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = byte;
+                16
+            },
             0x0F => { 
                 let mut a = self.reg_af.hi;
                 self.rrc_u8(&mut a);
@@ -1235,7 +1245,12 @@ impl Cpu {
                 self.reg_hl.lo = l;
                 8
             },
-            0x16 => { 16 },
+            0x16 => {
+                let mut byte = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.rl_u8(&mut byte);
+                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = byte;
+                16
+            },
             0x17 => { 
                 let mut a = self.reg_af.hi;
                 self.rl_u8(&mut a);
@@ -1278,7 +1293,12 @@ impl Cpu {
                 self.reg_hl.lo = l;
                 8
             },
-            0x1E => { 16 },
+            0x1E => {
+                let mut byte = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.rr_u8(&mut byte);
+                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = byte;
+                16
+            },
             0x1F => { 
                 let mut a = self.reg_af.hi;
                 self.rr_u8(&mut a);
@@ -1317,77 +1337,461 @@ impl Cpu {
             0x3D => { 8 },
             0x3E => { 16 },
             0x3F => { 8 },
-            0x40 => { 8 },
-            0x41 => { 8 },
-            0x42 => { 8 },
-            0x43 => { 8 },
-            0x44 => { 8 },
-            0x45 => { 8 },
-            0x46 => { 16 },
-            0x47 => { 8 },
-            0x48 => { 8 },
-            0x49 => { 8 },
-            0x4A => { 8 },
-            0x4B => { 8 },
-            0x4C => { 8 },
-            0x4D => { 8 },
-            0x4E => { 16 },
-            0x4F => { 8 },
-            0x50 => { 8 },
-            0x51 => { 8 },
-            0x52 => { 8 },
-            0x53 => { 8 },
-            0x54 => { 8 },
-            0x55 => { 8 },
-            0x56 => { 16 },
-            0x57 => { 8 },
-            0x58 => { 8 },
-            0x59 => { 8 },
-            0x5A => { 8 },
-            0x5B => { 8 },
-            0x5C => { 8 },
-            0x5D => { 8 },
-            0x5E => { 16 },
-            0x5F => { 8 },
-            0x60 => { 8 },
-            0x61 => { 8 },
-            0x62 => { 8 },
-            0x63 => { 8 },
-            0x64 => { 8 },
-            0x65 => { 8 },
-            0x66 => { 16 },
-            0x67 => { 8 },
-            0x68 => { 8 },
-            0x69 => { 8 },
-            0x6A => { 8 },
-            0x6B => { 8 },
-            0x6C => { 8 },
-            0x6D => { 8 },
-            0x6E => { 16 },
-            0x6F => { 8 },
-            0x70 => { 8 },
-            0x71 => { 8 },
-            0x72 => { 8 },
-            0x73 => { 8 },
-            0x74 => { 8 },
-            0x75 => { 8 },
-            0x76 => { 16 },
-            0x77 => { 8 },
-            0x78 => { 8 },
-            0x79 => { 8 },
-            0x7A => { 8 },
-            0x7B => { 8 },
-            0x7C => { 8 },
-            0x7D => { 8 },
-            0x7E => { 16 },
-            0x7F => { 8 },
+            0x40 => {
+                let reg = self.reg_bc.hi;
+                self.update_zero_flag(test_bit(reg, 0));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x41 => {
+                let reg = self.reg_bc.lo;
+                self.update_zero_flag(test_bit(reg, 0));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x42 => {
+                let reg = self.reg_de.hi;
+                self.update_zero_flag(test_bit(reg, 0));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x43 => {
+                let reg = self.reg_de.lo;
+                self.update_zero_flag(test_bit(reg, 0));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x44 => {
+                let reg = self.reg_hl.hi;
+                self.update_zero_flag(test_bit(reg, 0));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x45 => {
+                let reg = self.reg_hl.lo;
+                self.update_zero_flag(test_bit(reg, 0));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x46 => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.update_zero_flag(test_bit(val, 0));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                16
+            },
+            0x47 => {
+                let reg = self.reg_af.hi;
+                self.update_zero_flag(test_bit(reg, 0));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x48 => {
+                let reg = self.reg_bc.hi;
+                self.update_zero_flag(test_bit(reg, 1));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x49 => {
+                let reg = self.reg_bc.lo;
+                self.update_zero_flag(test_bit(reg, 1));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x4A => {
+                let reg = self.reg_de.hi;
+                self.update_zero_flag(test_bit(reg, 1));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x4B => {
+                let reg = self.reg_de.lo;
+                self.update_zero_flag(test_bit(reg, 1));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x4C => {
+                let reg = self.reg_hl.hi;
+                self.update_zero_flag(test_bit(reg, 1));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x4D => {
+                let reg = self.reg_hl.lo;
+                self.update_zero_flag(test_bit(reg, 1));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x4E => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.update_zero_flag(test_bit(val, 1));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                16
+            },
+            0x4F => {
+                let reg = self.reg_af.hi;
+                self.update_zero_flag(test_bit(reg, 1));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x50 => {
+                let reg = self.reg_bc.hi;
+                self.update_zero_flag(test_bit(reg, 2));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x51 => {
+                let reg = self.reg_bc.lo;
+                self.update_zero_flag(test_bit(reg, 2));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x52 => {
+                let reg = self.reg_de.hi;
+                self.update_zero_flag(test_bit(reg, 2));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x53 => {
+                let reg = self.reg_de.lo;
+                self.update_zero_flag(test_bit(reg, 2));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x54 => {
+                let reg = self.reg_hl.hi;
+                self.update_zero_flag(test_bit(reg, 2));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x55 => {
+                let reg = self.reg_hl.lo;
+                self.update_zero_flag(test_bit(reg, 2));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x56 => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.update_zero_flag(test_bit(val, 2));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                16
+            },
+            0x57 => {
+                let reg = self.reg_af.hi;
+                self.update_zero_flag(test_bit(reg, 2));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x58 => {
+                let reg = self.reg_bc.hi;
+                self.update_zero_flag(test_bit(reg, 3));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x59 => {
+                let reg = self.reg_bc.lo;
+                self.update_zero_flag(test_bit(reg, 3));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x5A => {
+                let reg = self.reg_de.hi;
+                self.update_zero_flag(test_bit(reg, 3));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x5B => {
+                let reg = self.reg_de.lo;
+                self.update_zero_flag(test_bit(reg, 3));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x5C => {
+                let reg = self.reg_hl.hi;
+                self.update_zero_flag(test_bit(reg, 3));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x5D => {
+                let reg = self.reg_hl.lo;
+                self.update_zero_flag(test_bit(reg, 3));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x5E => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.update_zero_flag(test_bit(val, 3));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                16
+            },
+            0x5F => {
+                let reg = self.reg_af.hi;
+                self.update_zero_flag(test_bit(reg, 3));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x60 => {
+                let reg = self.reg_bc.hi;
+                self.update_zero_flag(test_bit(reg, 4));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x61 => {
+                let reg = self.reg_bc.lo;
+                self.update_zero_flag(test_bit(reg, 4));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x62 => {
+                let reg = self.reg_de.hi;
+                self.update_zero_flag(test_bit(reg, 4));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x63 => {
+                let reg = self.reg_de.lo;
+                self.update_zero_flag(test_bit(reg, 4));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x64 => {
+                let reg = self.reg_hl.hi;
+                self.update_zero_flag(test_bit(reg, 4));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x65 => {
+                let reg = self.reg_hl.lo;
+                self.update_zero_flag(test_bit(reg, 4));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x66 => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.update_zero_flag(test_bit(val, 4));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                16
+            },
+            0x67 => {
+                let reg = self.reg_af.hi;
+                self.update_zero_flag(test_bit(reg, 4));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x68 => {
+                let reg = self.reg_bc.hi;
+                self.update_zero_flag(test_bit(reg, 5));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x69 => {
+                let reg = self.reg_bc.lo;
+                self.update_zero_flag(test_bit(reg, 5));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x6A => {
+                let reg = self.reg_de.hi;
+                self.update_zero_flag(test_bit(reg, 5));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x6B => {
+                let reg = self.reg_de.lo;
+                self.update_zero_flag(test_bit(reg, 5));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x6C => {
+                let reg = self.reg_hl.hi;
+                self.update_zero_flag(test_bit(reg, 5));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x6D => {
+                let reg = self.reg_hl.lo;
+                self.update_zero_flag(test_bit(reg, 5));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x6E => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.update_zero_flag(test_bit(val, 5));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                16
+            },
+            0x6F => {
+                let reg = self.reg_af.hi;
+                self.update_zero_flag(test_bit(reg, 5));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x70 => {
+                let reg = self.reg_bc.hi;
+                self.update_zero_flag(test_bit(reg, 6));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x71 => {
+                let reg = self.reg_bc.lo;
+                self.update_zero_flag(test_bit(reg, 6));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x72 => {
+                let reg = self.reg_de.hi;
+                self.update_zero_flag(test_bit(reg, 6));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x73 => {
+                let reg = self.reg_de.lo;
+                self.update_zero_flag(test_bit(reg, 6));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x74 => {
+                let reg = self.reg_hl.hi;
+                self.update_zero_flag(test_bit(reg, 6));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x75 => {
+                let reg = self.reg_hl.lo;
+                self.update_zero_flag(test_bit(reg, 6));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x76 => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.update_zero_flag(test_bit(val, 6));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                16
+            },
+            0x77 => {
+                let reg = self.reg_af.hi;
+                self.update_zero_flag(test_bit(reg, 6));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x78 => {
+                let reg = self.reg_bc.hi;
+                self.update_zero_flag(test_bit(reg, 7));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x79 => {
+                let reg = self.reg_bc.lo;
+                self.update_zero_flag(test_bit(reg, 7));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x7A => {
+                let reg = self.reg_de.hi;
+                self.update_zero_flag(test_bit(reg, 7));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x7B => {
+                let reg = self.reg_de.lo;
+                self.update_zero_flag(test_bit(reg, 7));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x7C => {
+                let reg = self.reg_hl.hi;
+                self.update_zero_flag(test_bit(reg, 7));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x7D => {
+                let reg = self.reg_hl.lo;
+                self.update_zero_flag(test_bit(reg, 7));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
+            0x7E => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.update_zero_flag(test_bit(val, 7));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                16
+            },
+            0x7F => {
+                let reg = self.reg_af.hi;
+                self.update_zero_flag(test_bit(reg, 7));
+                self.update_subtract_flag(false);
+                self.update_half_carry_flag(true);
+                8
+            },
             0x80 => { reset_bit(&mut self.reg_bc.hi, 0); 8 },
             0x81 => { reset_bit(&mut self.reg_bc.lo, 0); 8 },
             0x82 => { reset_bit(&mut self.reg_de.hi, 0); 8 },
             0x83 => { reset_bit(&mut self.reg_de.lo, 0); 8 },
             0x84 => { reset_bit(&mut self.reg_hl.hi, 0); 8 },
             0x85 => { reset_bit(&mut self.reg_hl.lo, 0); 8 },
-            0x86 => { 16 },
+            0x86 => { reset_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 0); 16 },
             0x87 => { reset_bit(&mut self.reg_af.hi, 0); 8 },
             0x88 => { reset_bit(&mut self.reg_bc.hi, 1); 8 },
             0x89 => { reset_bit(&mut self.reg_bc.lo, 1); 8 },
@@ -1395,7 +1799,7 @@ impl Cpu {
             0x8B => { reset_bit(&mut self.reg_de.lo, 1); 8 },
             0x8C => { reset_bit(&mut self.reg_hl.hi, 1); 8 },
             0x8D => { reset_bit(&mut self.reg_hl.lo, 1); 8 },
-            0x8E => { 16 },
+            0x8E => { reset_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 1); 16 },
             0x8F => { reset_bit(&mut self.reg_af.hi, 1); 8 },
             0x90 => { reset_bit(&mut self.reg_bc.hi, 2); 8 },
             0x91 => { reset_bit(&mut self.reg_bc.lo, 2); 8 },
@@ -1403,7 +1807,7 @@ impl Cpu {
             0x93 => { reset_bit(&mut self.reg_de.lo, 2); 8 },
             0x94 => { reset_bit(&mut self.reg_hl.hi, 2); 8 },
             0x95 => { reset_bit(&mut self.reg_hl.lo, 2); 8 },
-            0x96 => { 16 },
+            0x96 => { reset_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 2); 16 },
             0x97 => { reset_bit(&mut self.reg_af.hi, 2); 8 },
             0x98 => { reset_bit(&mut self.reg_bc.hi, 3); 8 },
             0x99 => { reset_bit(&mut self.reg_bc.lo, 3); 8 },
@@ -1411,7 +1815,7 @@ impl Cpu {
             0x9B => { reset_bit(&mut self.reg_de.lo, 3); 8 },
             0x9C => { reset_bit(&mut self.reg_hl.hi, 3); 8 },
             0x9D => { reset_bit(&mut self.reg_hl.lo, 3); 8 },
-            0x9E => { 16 },
+            0x9E => { reset_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 3); 16 },
             0x9F => { reset_bit(&mut self.reg_af.hi, 3); 8 },
             0xA0 => { reset_bit(&mut self.reg_bc.hi, 4); 8 },
             0xA1 => { reset_bit(&mut self.reg_bc.lo, 4); 8 },
@@ -1419,7 +1823,7 @@ impl Cpu {
             0xA3 => { reset_bit(&mut self.reg_de.lo, 4); 8 },
             0xA4 => { reset_bit(&mut self.reg_hl.hi, 4); 8 },
             0xA5 => { reset_bit(&mut self.reg_hl.lo, 4); 8 },
-            0xA6 => { 16 },
+            0xA6 => { reset_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 4); 16 },
             0xA7 => { reset_bit(&mut self.reg_af.hi, 4); 8 },
             0xA8 => { reset_bit(&mut self.reg_bc.hi, 5); 8 },
             0xA9 => { reset_bit(&mut self.reg_bc.lo, 5); 8 },
@@ -1427,7 +1831,7 @@ impl Cpu {
             0xAB => { reset_bit(&mut self.reg_de.lo, 5); 8 },
             0xAC => { reset_bit(&mut self.reg_hl.hi, 5); 8 },
             0xAD => { reset_bit(&mut self.reg_hl.lo, 5); 8 },
-            0xAE => { 16 },
+            0xAE => { reset_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 5); 16 },
             0xAF => { reset_bit(&mut self.reg_af.hi, 5); 8 },
             0xB0 => { reset_bit(&mut self.reg_bc.hi, 6); 8 },
             0xB1 => { reset_bit(&mut self.reg_bc.lo, 6); 8 },
@@ -1435,7 +1839,7 @@ impl Cpu {
             0xB3 => { reset_bit(&mut self.reg_de.lo, 6); 8 },
             0xB4 => { reset_bit(&mut self.reg_hl.hi, 6); 8 },
             0xB5 => { reset_bit(&mut self.reg_hl.lo, 6); 8 },
-            0xB6 => { 16 },
+            0xB6 => { reset_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 6); 16 },
             0xB7 => { reset_bit(&mut self.reg_af.hi, 6); 8 },
             0xB8 => { reset_bit(&mut self.reg_bc.hi, 7); 8 },
             0xB9 => { reset_bit(&mut self.reg_bc.lo, 7); 8 },
@@ -1443,7 +1847,7 @@ impl Cpu {
             0xBB => { reset_bit(&mut self.reg_de.lo, 7); 8 },
             0xBC => { reset_bit(&mut self.reg_hl.hi, 7); 8 },
             0xBD => { reset_bit(&mut self.reg_hl.lo, 7); 8 },
-            0xBE => { 16 },
+            0xBE => { reset_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 7); 16 },
             0xBF => { reset_bit(&mut self.reg_af.hi, 7); 8 },
             0xC0 => { set_bit(&mut self.reg_bc.hi, 0); 8 },
             0xC1 => { set_bit(&mut self.reg_bc.lo, 0); 8 },
@@ -1451,7 +1855,7 @@ impl Cpu {
             0xC3 => { set_bit(&mut self.reg_de.lo, 0); 8 },
             0xC4 => { set_bit(&mut self.reg_hl.hi, 0); 8 },
             0xC5 => { set_bit(&mut self.reg_hl.lo, 0); 8 },
-            0xC6 => { 16 },
+            0xC6 => { set_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 0); 16 },
             0xC7 => { set_bit(&mut self.reg_af.hi, 0); 8 },
             0xC8 => { set_bit(&mut self.reg_bc.hi, 1); 8 },
             0xC9 => { set_bit(&mut self.reg_bc.lo, 1); 8 },
@@ -1459,7 +1863,7 @@ impl Cpu {
             0xCB => { set_bit(&mut self.reg_de.lo, 1); 8 },
             0xCC => { set_bit(&mut self.reg_hl.hi, 1); 8 },
             0xCD => { set_bit(&mut self.reg_hl.lo, 1); 8 },
-            0xCE => { 16 },
+            0xCE => { set_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 1); 16 },
             0xCF => { set_bit(&mut self.reg_af.hi, 1); 8 },
             0xD0 => { set_bit(&mut self.reg_bc.hi, 2); 8 },
             0xD1 => { set_bit(&mut self.reg_bc.lo, 2); 8 },
@@ -1467,7 +1871,7 @@ impl Cpu {
             0xD3 => { set_bit(&mut self.reg_de.lo, 2); 8 },
             0xD4 => { set_bit(&mut self.reg_hl.hi, 2); 8 },
             0xD5 => { set_bit(&mut self.reg_hl.lo, 2); 8 },
-            0xD6 => { 16 },
+            0xD6 => { set_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 2); 16 },
             0xD7 => { set_bit(&mut self.reg_af.hi, 2); 8 },
             0xD8 => { set_bit(&mut self.reg_bc.hi, 3); 8 },
             0xD9 => { set_bit(&mut self.reg_bc.lo, 3); 8 },
@@ -1475,7 +1879,7 @@ impl Cpu {
             0xDB => { set_bit(&mut self.reg_de.lo, 3); 8 },
             0xDC => { set_bit(&mut self.reg_hl.hi, 3); 8 },
             0xDD => { set_bit(&mut self.reg_hl.lo, 3); 8 },
-            0xDE => { 16 },
+            0xDE => { set_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 3); 16 },
             0xDF => { set_bit(&mut self.reg_af.hi, 3); 8 },
             0xE0 => { set_bit(&mut self.reg_bc.hi, 4); 8 },
             0xE1 => { set_bit(&mut self.reg_bc.lo, 4); 8 },
@@ -1483,7 +1887,7 @@ impl Cpu {
             0xE3 => { set_bit(&mut self.reg_de.lo, 4); 8 },
             0xE4 => { set_bit(&mut self.reg_hl.hi, 4); 8 },
             0xE5 => { set_bit(&mut self.reg_hl.lo, 4); 8 },
-            0xE6 => { 16 },
+            0xE6 => { set_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 4); 16 },
             0xE7 => { set_bit(&mut self.reg_af.hi, 4); 8 },
             0xE8 => { set_bit(&mut self.reg_bc.hi, 5); 8 },
             0xE9 => { set_bit(&mut self.reg_bc.lo, 5); 8 },
@@ -1491,7 +1895,7 @@ impl Cpu {
             0xEB => { set_bit(&mut self.reg_de.lo, 5); 8 },
             0xEC => { set_bit(&mut self.reg_hl.hi, 5); 8 },
             0xED => { set_bit(&mut self.reg_hl.lo, 5); 8 },
-            0xEE => { 16 },
+            0xEE => { set_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 5); 16 },
             0xEF => { set_bit(&mut self.reg_af.hi, 5); 8 },
             0xF0 => { set_bit(&mut self.reg_bc.hi, 6); 8 },
             0xF1 => { set_bit(&mut self.reg_bc.lo, 6); 8 },
@@ -1499,7 +1903,7 @@ impl Cpu {
             0xF3 => { set_bit(&mut self.reg_de.lo, 6); 8 },
             0xF4 => { set_bit(&mut self.reg_hl.hi, 6); 8 },
             0xF5 => { set_bit(&mut self.reg_hl.lo, 6); 8 },
-            0xF6 => { 16 },
+            0xF6 => { set_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 6); 16 },
             0xF7 => { set_bit(&mut self.reg_af.hi, 6); 8 },
             0xF8 => { set_bit(&mut self.reg_bc.hi, 7); 8 },
             0xF9 => { set_bit(&mut self.reg_bc.lo, 7); 8 },
@@ -1507,7 +1911,7 @@ impl Cpu {
             0xFB => { set_bit(&mut self.reg_de.lo, 7); 8 },
             0xFC => { set_bit(&mut self.reg_hl.hi, 7); 8 },
             0xFD => { set_bit(&mut self.reg_hl.lo, 7); 8 },
-            0xFE => { 16 },
+            0xFE => { set_bit(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize], 7); 16 },
             0xFF => { set_bit(&mut self.reg_af.hi, 7); 8 },
             _ => panic!("Undefined extended opcode: 0x{:02X}", opcode)
         }
@@ -1522,7 +1926,7 @@ impl Cpu {
         self.reg_af.hi = sum;
         self.update_half_carry_flag((((src & 0x0F) + (a & 0x0F)) & 0x10) == 0x10);
         self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
-        self.update_zero_flag(sum);
+        self.update_zero_flag(sum == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1534,7 +1938,7 @@ impl Cpu {
         self.reg_af.hi = sum;
         self.update_half_carry_flag((((src & 0x0F) + (a & 0x0F)) + carry & 0x10) == 0x10);
         self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
-        self.update_zero_flag(sum);
+        self.update_zero_flag(sum == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1550,7 +1954,7 @@ impl Cpu {
     /// Increments an unsigned 8-bit value.
     pub fn inc_u8(&mut self, dest: &mut u8) {
         *dest = dest.wrapping_add(1);
-        self.update_zero_flag(*dest);
+        self.update_zero_flag(*dest == 0);
         self.update_half_carry_flag(((1 + (*dest & 0x0F)) & 0x10) == 0x10);
         self.update_subtract_flag(false);
     }
@@ -1558,7 +1962,7 @@ impl Cpu {
     /// Decrements an unsigned 8-bit value.
     pub fn dec_u8(&mut self, dest: &mut u8) {
         *dest = dest.wrapping_sub(1);
-        self.update_zero_flag(*dest);
+        self.update_zero_flag(*dest == 0);
         self.update_half_carry_flag((*dest & 0x0F) < 1);
         self.update_subtract_flag(true);
     }
@@ -1571,7 +1975,7 @@ impl Cpu {
         self.reg_af.hi = sum;
         self.update_half_carry_flag((a & 0x0F) < (sum & 0x0F));
         self.update_carry_flag((src as i32 - sum as i32) < 0);
-        self.update_zero_flag(sum);
+        self.update_zero_flag(sum == 0);
         self.update_subtract_flag(true);
     }
 
@@ -1583,7 +1987,7 @@ impl Cpu {
         self.reg_af.hi = sum;
         self.update_half_carry_flag((a & 0x0F) < (sum & 0x0F) + carry);
         self.update_carry_flag(src as u16 + sum as u16 > 0xFF);
-        self.update_zero_flag(sum);
+        self.update_zero_flag(sum == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1594,7 +1998,7 @@ impl Cpu {
         self.reg_af.hi = res;
         self.update_half_carry_flag(true);
         self.update_carry_flag(false);
-        self.update_zero_flag(res);
+        self.update_zero_flag(res == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1605,7 +2009,7 @@ impl Cpu {
         self.reg_af.hi = res;
         self.update_half_carry_flag(false);
         self.update_carry_flag(false);
-        self.update_zero_flag(res);
+        self.update_zero_flag(res == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1616,7 +2020,7 @@ impl Cpu {
         self.reg_af.hi = res;
         self.update_half_carry_flag(false);
         self.update_carry_flag(false);
-        self.update_zero_flag(res);
+        self.update_zero_flag(res == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1637,7 +2041,7 @@ impl Cpu {
         }
         self.update_half_carry_flag(false);
         self.update_carry_flag(carry_occurred);
-        self.update_zero_flag(*src);
+        self.update_zero_flag(*src == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1647,7 +2051,7 @@ impl Cpu {
         *src = src.rotate_left(1);
         self.update_half_carry_flag(false);
         self.update_carry_flag(carry_occurred);
-        self.update_zero_flag(*src);
+        self.update_zero_flag(*src == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1660,7 +2064,7 @@ impl Cpu {
         }
         self.update_half_carry_flag(false);
         self.update_carry_flag(carry_occurred);
-        self.update_zero_flag(*src);
+        self.update_zero_flag(*src == 0);
         self.update_subtract_flag(false);
     }
 
@@ -1670,7 +2074,8 @@ impl Cpu {
         *src = src.rotate_right(1);
         self.update_half_carry_flag(false);
         self.update_carry_flag(carry_occurred);
-        self.update_zero_flag(*src);
+        self.update_zero_flag(*src == 0);
         self.update_subtract_flag(false);
     }
+
 }
