@@ -137,7 +137,10 @@ impl MemoryManager {
             },
 
             // Unusable memory
-            0xFEA0...0xFEFE => println!("Attempted to write to unusable memory address {}", address),
+            0xFEA0...0xFEFE => println!("Attempted to write to unusable memory address 0x{:04X}", address),
+
+            // DIV register
+            0xFF04 => self.memory[0xFF04] = 0,
 
             // Updating frequency
             0xFF07 => {

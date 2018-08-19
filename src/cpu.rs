@@ -1321,14 +1321,54 @@ impl Cpu {
             0x2D => { 8 },
             0x2E => { 16 },
             0x2F => { 8 },
-            0x30 => { 8 },
-            0x31 => { 8 },
-            0x32 => { 8 },
-            0x33 => { 8 },
-            0x34 => { 8 },
-            0x35 => { 8 },
-            0x36 => { 16 },
-            0x37 => { 8 },
+            0x30 => {
+                swap_nybbles(&mut self.reg_bc.hi);
+                let is_zero = self.reg_bc.hi == 0;
+                self.update_zero_flag(is_zero);
+                8
+            },
+            0x31 => {
+                swap_nybbles(&mut self.reg_bc.lo);
+                let is_zero = self.reg_bc.lo == 0;
+                self.update_zero_flag(is_zero);
+                8
+            },
+            0x32 => {
+                swap_nybbles(&mut self.reg_de.hi);
+                let is_zero = self.reg_de.hi == 0;
+                self.update_zero_flag(is_zero);
+                8
+            },
+            0x33 => {
+                swap_nybbles(&mut self.reg_de.lo);
+                let is_zero = self.reg_de.lo == 0;
+                self.update_zero_flag(is_zero);
+                8
+            },
+            0x34 => {
+                swap_nybbles(&mut self.reg_hl.hi);
+                let is_zero = self.reg_hl.hi == 0;
+                self.update_zero_flag(is_zero);
+                8
+            },
+            0x35 => {
+                swap_nybbles(&mut self.reg_hl.lo);
+                let is_zero = self.reg_hl.lo == 0;
+                self.update_zero_flag(is_zero);
+                8
+            },
+            0x36 => {
+                swap_nybbles(&mut self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize]);
+                let is_zero = self.reg_bc.hi == 0;
+                self.update_zero_flag(is_zero);
+                16
+            },
+            0x37 => {
+                swap_nybbles(&mut self.reg_af.hi);
+                let is_zero = self.reg_af.hi == 0;
+                self.update_zero_flag(is_zero);
+                8
+            },
             0x38 => { 8 },
             0x39 => { 8 },
             0x3A => { 8 },

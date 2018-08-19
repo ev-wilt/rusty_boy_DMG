@@ -314,7 +314,7 @@ impl DisplayManager {
 
             // Reset scanline
             else if next_scanline > 153 {
-                self.memory_manager.borrow_mut().write_memory(0xFF44, 0);
+                self.memory_manager.borrow_mut().memory[0xFF44] = 0;
             }
 
             else if next_scanline < 144 {
@@ -331,7 +331,7 @@ impl DisplayManager {
         // Test if display is enabled
         if !self.test_display_bit(7) {
             self.remaining_cycles = 456;
-            self.memory_manager.borrow_mut().write_memory(0xFF44, 0);
+            self.memory_manager.borrow_mut().memory[0xFF44] = 0;
             display_status &= 0xFC;
             display_status |= 1;
             self.memory_manager.borrow_mut().write_memory(0xFF41, display_status);

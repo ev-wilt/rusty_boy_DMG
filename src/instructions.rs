@@ -25,6 +25,10 @@ pub fn ld_u8_reg(src: u8, dest: &mut u8) {
     *dest = src;
 }
 
+pub fn swap_nybbles(byte: &mut u8) {
+    *byte = (*byte & 0xF) << 4 | (*byte >> 4);
+}
+
 pub fn set_bit(byte: &mut u8, bit: u8) {
     *byte |= 1 << bit;
 }
