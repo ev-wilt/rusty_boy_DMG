@@ -311,7 +311,7 @@ impl Cpu {
                 4
             },
             0x26 => { ld_u8_reg(self.get_byte(), &mut self.reg_hl.hi); 8 },
-            0x27 => { /* DAA */ 4 },
+            0x27 => { self.daa(); 4 },
             0x28 => {
                 if test_bit(self.reg_af.lo, 7) {
                     self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16;
@@ -417,8 +417,8 @@ impl Cpu {
                 8
             },
             0x3B => { 
-                let val = self.reg_sp.get_pair();
-                self.reg_sp.set_pair(val - 1);
+                let val = self.reg_sp.get_pair().wrapping_sub(1);
+                self.reg_sp.set_pair(val);
                 8
             },
             0x3C => { 
@@ -2242,5 +2242,35 @@ impl Cpu {
         self.update_half_carry_flag(false);
         self.update_carry_flag(byte & 1 == 1);
         new_byte
+    }
+
+    /// Adjusts register A to BCD.
+    pub fn daa(&mut self) {
+        let mut shift = 0;
+        let flags = self.reg_af.lo;
+
+        if flags & (1 << 5) != 0 {
+            shift |= 0x6;
+        }
+        if flags & (1 << 4) != 0 {
+            shift |= 0x60;
+        }
+        if flags & (1 << 6) == 0 {
+            if self.reg_af.hi & 0xF > 9 {
+                shift |= 0x6;
+            }
+            if self.reg_af.hi > 0x99 {
+                shift |= 0x60;
+            }
+            self.reg_af.hi = self.reg_af.hi.wrapping_sub(shift);
+        }
+        else {
+            self.reg_af.hi = self.reg_af.hi.wrapping_add(shift);
+        }
+
+        let is_zero = self.reg_af.hi == 0;
+        self.update_zero_flag(is_zero);
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(shift >= 0x60);
     }
 }
