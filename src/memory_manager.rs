@@ -172,7 +172,7 @@ impl MemoryManager {
             0x4000...0x7FFF => {
                 let shifted_address: u16 = address - 0x4000;
                 let rom_bank = self.cartridge.get_current_rom_bank();
-                return self.cartridge.get_rom((shifted_address + (rom_bank as u16 * 0x4000)) as u32);
+                return self.cartridge.get_rom(shifted_address as u32 + (rom_bank as u32 * 0x4000));
             },
 
             // Reading RAM bank

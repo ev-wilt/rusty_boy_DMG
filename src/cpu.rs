@@ -1305,22 +1305,86 @@ impl Cpu {
                 self.reg_af.hi = a;
                 8
             },
-            0x20 => { 8 },
-            0x21 => { 8 },
-            0x22 => { 8 },
-            0x23 => { 8 },
-            0x24 => { 8 },
-            0x25 => { 8 },
-            0x26 => { 16 },
-            0x27 => { 8 },
-            0x28 => { 8 },
-            0x29 => { 8 },
-            0x2A => { 8 },
-            0x2B => { 8 },
-            0x2C => { 8 },
-            0x2D => { 8 },
-            0x2E => { 16 },
-            0x2F => { 8 },
+            0x20 => {
+                let b = self.reg_bc.hi; 
+                self.reg_bc.hi = self.sla_u8(b);
+                8
+            },
+            0x21 => {
+                let c = self.reg_bc.lo; 
+                self.reg_bc.lo = self.sla_u8(c);
+                8
+            },
+            0x22 => {
+                let d = self.reg_de.hi; 
+                self.reg_de.hi = self.sla_u8(d);
+                8
+            },
+            0x23 => {
+                let e = self.reg_de.lo; 
+                self.reg_de.lo = self.sla_u8(e);
+                8
+            },
+            0x24 => {
+                let h = self.reg_hl.hi; 
+                self.reg_hl.hi = self.sla_u8(h);
+                8
+            },
+            0x25 => {
+                let l = self.reg_hl.lo; 
+                self.reg_hl.lo = self.sla_u8(l);
+                8
+            },
+            0x26 => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = self.sla_u8(val);
+                16
+            },
+            0x27 => {
+                let a = self.reg_af.hi; 
+                self.reg_af.hi = self.sla_u8(a);
+                8
+            },
+            0x28 => {
+                let b = self.reg_bc.hi; 
+                self.reg_bc.hi = self.sra_u8(b);
+                8
+            },
+            0x29 => {
+                let c = self.reg_bc.lo; 
+                self.reg_bc.lo = self.sra_u8(c);
+                8
+            },
+            0x2A => {
+                let d = self.reg_de.hi; 
+                self.reg_de.hi = self.sra_u8(d);
+                8
+            },
+            0x2B => {
+                let e = self.reg_de.lo; 
+                self.reg_de.lo = self.sra_u8(e);
+                8
+            },
+            0x2C => {
+                let h = self.reg_hl.hi; 
+                self.reg_hl.hi = self.sra_u8(h);
+                8
+            },
+            0x2D => {
+                let l = self.reg_hl.lo; 
+                self.reg_hl.lo = self.sra_u8(l);
+                8
+            },
+            0x2E => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = self.sra_u8(val);
+                16
+            },
+            0x2F => {
+                let a = self.reg_af.hi; 
+                self.reg_af.hi = self.sra_u8(a);
+                8
+            },
             0x30 => {
                 swap_nybbles(&mut self.reg_bc.hi);
                 let is_zero = self.reg_bc.hi == 0;
@@ -1369,14 +1433,46 @@ impl Cpu {
                 self.update_zero_flag(is_zero);
                 8
             },
-            0x38 => { 8 },
-            0x39 => { 8 },
-            0x3A => { 8 },
-            0x3B => { 8 },
-            0x3C => { 8 },
-            0x3D => { 8 },
-            0x3E => { 16 },
-            0x3F => { 8 },
+            0x38 => {
+                let b = self.reg_bc.hi; 
+                self.reg_bc.hi = self.srl_u8(b);
+                8
+            },
+            0x39 => {
+                let c = self.reg_bc.lo; 
+                self.reg_bc.lo = self.srl_u8(c);
+                8
+            },
+            0x3A => {
+                let d = self.reg_de.hi; 
+                self.reg_de.hi = self.srl_u8(d);
+                8
+            },
+            0x3B => {
+                let e = self.reg_de.lo; 
+                self.reg_de.lo = self.srl_u8(e);
+                8
+            },
+            0x3C => {
+                let h = self.reg_hl.hi; 
+                self.reg_hl.hi = self.srl_u8(h);
+                8
+            },
+            0x3D => {
+                let l = self.reg_hl.lo; 
+                self.reg_hl.lo = self.srl_u8(l);
+                8
+            },
+            0x3E => {
+                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = self.srl_u8(val);
+                16
+            },
+            0x3F => {
+                let a = self.reg_af.hi; 
+                self.reg_af.hi = self.srl_u8(a);
+                8
+            },
             0x40 => {
                 let reg = self.reg_bc.hi;
                 self.update_zero_flag(test_bit(reg, 0));
@@ -2118,4 +2214,33 @@ impl Cpu {
         self.update_subtract_flag(false);
     }
 
+    /// Performs an arithmetic shift left.
+    pub fn sla_u8(&mut self, byte: u8) -> u8 {
+        let new_byte = byte << 1;
+        self.update_zero_flag(new_byte == 0);
+        self.update_subtract_flag(false);
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(((byte as u16) << 1) > 0xFF);
+        new_byte
+    }
+
+    /// Performs an arithmetic shift right.
+    pub fn sra_u8(&mut self, byte: u8) -> u8 {
+        let new_byte = (byte >> 1) | (byte & 0x80);
+        self.update_zero_flag(new_byte == 0);
+        self.update_subtract_flag(false);
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(false);
+        new_byte
+    }
+
+    /// Performs an logical shift right.
+    pub fn srl_u8(&mut self, byte: u8) -> u8 {
+        let new_byte = byte >> 1;
+        self.update_zero_flag(new_byte == 0);
+        self.update_subtract_flag(false);
+        self.update_half_carry_flag(false);
+        self.update_carry_flag(byte & 1 == 1);
+        new_byte
+    }
 }

@@ -173,7 +173,7 @@ impl DisplayManager {
                 tile_loc += tile_id as u16 * 16;
             }
             else {
-                tile_loc += (tile_id as u16 + 128) * 16;
+                tile_loc += (tile_id as i8 as i16 + 128) as u16 * 16;
             }
 
             let current_line = (tile_y % 8) * 2;
@@ -215,29 +215,30 @@ impl DisplayManager {
         for current_sprite in 0..40 {
             let sprite_x = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4)) as u16 as i32 - 16;
             let sprite_y = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 1) as u16 as i32 - 8;
-            let sprite_id = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 2);
+            let sprite_id = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 2) as u16;
             let sprite_attrs = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 3);
             let current_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44) as i32;
 
-            let flip_x = if sprite_attrs & (1 << 5) >> 5 == 1 { true } else { false }; 
-            let flip_y = if sprite_attrs & (1 << 6) >> 6 == 1 { true } else { false }; 
+            let flip_x = if (sprite_attrs & (1 << 5)) >> 5 == 1 { true } else { false }; 
+            let flip_y = if (sprite_attrs & (1 << 6)) >> 6 == 1 { true } else { false }; 
             let sprite_size = if self.test_display_bit(2) { 16 } else { 8 };
 
-            if current_scanline >= sprite_x && current_scanline < (sprite_y + sprite_size) {
-                let mut sprite_line = (current_scanline - sprite_y) as i32;
+            if current_scanline >= sprite_y && current_scanline < (sprite_y + sprite_size) {
+                let sprite_line: u16;
 
                 if flip_y {
-                    sprite_line -= sprite_size as i32;
-                    sprite_line *= -1;
+                    sprite_line = (sprite_size - 1 - (current_scanline - sprite_y)) as u16;
+                }
+                else {
+                    sprite_line = (current_scanline - sprite_y) as u16;
                 }
 
-                sprite_line *= 2;
-                let data_address = 0x8000 + (sprite_id as u16 * 16) + sprite_line as u16;
+                let data_address = 0x8000 + sprite_id * 16 + sprite_line * 2;
                 let data_lo = self.memory_manager.borrow_mut().read_memory(data_address);
                 let data_hi = self.memory_manager.borrow_mut().read_memory(data_address + 1);
 
-                for sprite_pixel in (0..7).rev() {
-                    let mut color_loc: i32 = sprite_pixel;
+                for sprite_pixel in 0..8 {
+                    let mut color_loc = sprite_pixel;
 
                     if flip_x {
                         color_loc -= 7;
@@ -260,12 +261,11 @@ impl DisplayManager {
                         DisplayColor::Black => { red = 0x00; green = 0x00; blue = 0x00 }
                     }
 
-                    let pixel = sprite_x as i32 + (7 - sprite_pixel);
-                    
-                    if current_scanline > 143 || pixel > 159 {
+                    let pixel = sprite_x + (7 - sprite_pixel);
+                    if current_scanline > 143 || current_scanline < 0 || pixel > 159 || pixel < 0 {
                         panic!("Setting color of pixel outside of visible display.
-                                Scanline: {} should be in range 0-143, 
-                                Pixel: {} should be in range 0-159", current_scanline, pixel);
+                            Scanline: {} should be in range 0-143, 
+                            Pixel: {} should be in range 0-159", current_scanline, pixel);
                     }
                     self.display[pixel as usize][current_scanline as usize][0] = red;
                     self.display[pixel as usize][current_scanline as usize][1] = green;
