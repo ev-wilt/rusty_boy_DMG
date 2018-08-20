@@ -23,7 +23,7 @@ impl MemoryManager {
             memory[i] = cartridge.get_rom(i as u32);
         }
         let mut manager = MemoryManager {
-            cartridge: Cartridge::new(),
+            cartridge: cartridge,
             memory: memory,
             timer_counter: 1024,
             div_counter: 0,
@@ -170,14 +170,14 @@ impl MemoryManager {
         match address {
             // Reading ROM bank
             0x4000...0x7FFF => {
-                let shifted_address: u16 = address - 0x4000;
+                let shifted_address = address - 0x4000;
                 let rom_bank = self.cartridge.get_current_rom_bank();
                 return self.cartridge.get_rom(shifted_address as u32 + (rom_bank as u32 * 0x4000));
             },
 
             // Reading RAM bank
             0xA000...0xBFFF => {
-                let shifted_address: u16 = address - 0xA000;
+                let shifted_address = address - 0xA000;
                 let ram_bank = self.cartridge.get_current_ram_bank();
                 return self.cartridge.get_ram(shifted_address + (ram_bank as u16 * 0x2000));
             },

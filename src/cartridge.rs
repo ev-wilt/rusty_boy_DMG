@@ -142,37 +142,42 @@ impl Cartridge {
     pub fn manage_banking(&mut self, address: u16, byte: u8) {
 
         // Enable RAM bank writes
-        if address < 0x2000 {
-            if self.banking_type == BankingType::MBC1 || self.banking_type == BankingType::MBC2 {
-                self.update_ram_writing(address, byte);
-            }
-        }
-
-        // Change low bits of ROM bank
-        else if address >= 0x2000 && address < 0x4000 {
-            if self.banking_type == BankingType::MBC1 || self.banking_type == BankingType::MBC2 {
-                self.change_lo_rom_bank(byte);
-            } 
-        }
-
-        // Change RAM bank or change high bits of ROM bank
-        else if address >= 0x4000 && address < 0x6000 {
-            if self.banking_type == BankingType::MBC1 {
-                if self.rom_banking_mode {
-                    self.change_hi_rom_bank(byte);
+        match address {
+            0...0x1FFF => {
+                if self.banking_type == BankingType::MBC1 || self.banking_type == BankingType::MBC2 {
+                    self.update_ram_writing(address, byte);
                 }
-                else {
-                    self.change_ram_bank(byte);
+            },
+
+            // Change low bits of ROM bank
+            0x2000...0x3FFF => {
+                if self.banking_type == BankingType::MBC1 || self.banking_type == BankingType::MBC2 {
+                    self.change_lo_rom_bank(byte);
                 }
-            }
+            },
+
+            // Change RAM bank or change high bits of ROM bank
+            0x4000...0x5FFF => {
+                if self.banking_type == BankingType::MBC1 {
+                    if self.rom_banking_mode {
+                        self.change_hi_rom_bank(byte);
+                    }
+                    else {
+                        self.change_ram_bank(byte);
+                    }
+                }
+            },
+
+            // Update banking mode
+            0x6000...0x7FFF => {
+                if self.banking_type == BankingType::MBC1 {
+                    self.set_banking_mode(byte);
+                }
+            },
+
+            _ => panic!("Inaccessable address: 0x{:04X}", address)
         }
 
-        // Update banking mode
-        else if address >= 0x6000 && address < 0x8000 {
-            if self.banking_type == BankingType::MBC1 {
-                self.set_banking_mode(byte);
-            }
-        }
     }
 
     /// Returns the byte in rom at a given address.
