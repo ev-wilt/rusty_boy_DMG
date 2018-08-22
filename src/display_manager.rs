@@ -108,7 +108,7 @@ impl DisplayManager {
         let window_y = self.memory_manager.borrow_mut().read_memory(0xFF4A);
         let window_x = self.memory_manager.borrow_mut().read_memory(0xFF4B).wrapping_sub(7);
         let mut window_enabled = false;
-        let mut unsigned_data = false;
+        let mut unsigned_data = true;
 
         if self.test_display_bit(5) && window_y <= self.memory_manager.borrow_mut().read_memory(0xFF44) {
             window_enabled = true;
@@ -119,7 +119,7 @@ impl DisplayManager {
         }
         else {
             bg_window_tile_data = 0x8800;
-            unsigned_data = true;
+            unsigned_data = false;
         }
 
         if !window_enabled {
@@ -350,7 +350,9 @@ impl DisplayManager {
             // Set bit 0 to 1, bit 1 to 0
             display_status |= 1;
             display_status &= 0xFD;
-
+            if (display_status & (1 << 4)) >> 4 == 1 {
+                request_interrupt = true;
+            }
         }
         else {
             let mode_2_min = 456 - 80;
@@ -370,7 +372,7 @@ impl DisplayManager {
 
             // Mode 3
             else if self.remaining_cycles >= mode_3_min {
-                new_mode = 2;
+                new_mode = 3;
                 
                 // Set bit 0 to 1, bit 1 to 1
                 display_status |= 3;
@@ -393,7 +395,6 @@ impl DisplayManager {
         }
 
         if current_scanline == self.memory_manager.borrow_mut().read_memory(0xFF45) {
-            
             display_status |= 1 << 2;
             if (display_status & (1 << 6) >> 6) == 1 {
                 self.interrupt_handler.request_interrupt(1);

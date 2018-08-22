@@ -161,10 +161,11 @@ impl Cpu {
             return 4;
         }
 
+        // println!("BC:\t0x{:04X}\nDE:\t0x{:04X}\nHL:\t0x{:04X}\nAF:\t0x{:04X}\nSP:\t0x{:04X}\nPC:\t0x{:04X}\n", self.reg_bc.get_pair(), self.reg_de.get_pair(), self.reg_hl.get_pair(), self.reg_af.get_pair(), self.reg_sp.get_pair(), self.reg_pc);
         let opcode = self.memory_manager.borrow_mut().read_memory(self.reg_pc);
         self.reg_pc += 1;
 
-        // println!("{:02X}", opcode);
+        // println!("Opcode: 0x{:02X}", opcode);
         match opcode {
             0x00 => { /* NOP */ 4 },
             0x01 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_bc); 12 },
