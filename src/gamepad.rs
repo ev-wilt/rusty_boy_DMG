@@ -90,11 +90,7 @@ impl Gamepad {
 
         // Check if the key is a button or 
         // direction
-        let mut key_is_button = false;
-
-        if key > 3 {
-            key_is_button = true;
-        }
+        let key_is_button = if key > 3 { true } else { false };
 
         // Determine if an interrupt is needed
         let gamepad_reg = self.memory_manager.borrow_mut().read_memory(0xFF00);

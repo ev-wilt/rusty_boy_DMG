@@ -213,8 +213,8 @@ impl DisplayManager {
     pub fn render_sprites(&mut self) {
 
         for current_sprite in 0..40 {
-            let sprite_x = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4)) as u16 as i32 - 16;
-            let sprite_y = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 1) as u16 as i32 - 8;
+            let sprite_y = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4)) as u16 as i32 - 16;
+            let sprite_x = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 1) as u16 as i32 - 8;
             let sprite_id = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 2) as u16;
             let sprite_attrs = self.memory_manager.borrow_mut().read_memory(0xFE00 + (current_sprite * 4) + 3);
             let current_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44) as i32;
@@ -224,27 +224,21 @@ impl DisplayManager {
             let sprite_size = if self.test_display_bit(2) { 16 } else { 8 };
 
             if current_scanline >= sprite_y && current_scanline < (sprite_y + sprite_size) {
-                let sprite_line: u16;
-
-                if flip_y {
-                    sprite_line = (sprite_size - 1 - (current_scanline - sprite_y)) as u16;
+                
+                let sprite_line = if flip_y {
+                    (sprite_size - 1 - (current_scanline - sprite_y)) as u16
                 }
                 else {
-                    sprite_line = (current_scanline - sprite_y) as u16;
-                }
+                    (current_scanline - sprite_y) as u16
+                };
 
-                let data_address = 0x8000 + sprite_id * 16 + sprite_line * 2;
+                let data_address = (0x8000 + sprite_id * 16) + sprite_line * 2;
                 let data_lo = self.memory_manager.borrow_mut().read_memory(data_address);
                 let data_hi = self.memory_manager.borrow_mut().read_memory(data_address + 1);
 
                 for sprite_pixel in 0..8 {
-                    let mut color_loc = sprite_pixel;
 
-                    if flip_x {
-                        color_loc -= 7;
-                        color_loc *= -1;
-                    }
-
+                    let mut color_loc = if flip_x { (sprite_pixel - 7) * -1 } else { sprite_pixel };
                     let mut color_id = if (data_hi & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
                     color_id <<= 1;
                     color_id |= if (data_lo & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
