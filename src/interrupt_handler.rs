@@ -19,23 +19,25 @@ impl InterruptHandler {
 
     /// Handles an interrupt for a given bit.
     pub fn handle_interrupt(&mut self, bit: u8, cpu: &mut Cpu) {
-        cpu.set_interrupts_enabled(false);
-        let mut request_value = self.memory_manager.borrow_mut().read_memory(0xFF0F);
-        request_value ^= 1 << bit;
-        self.memory_manager.borrow_mut().write_memory(0xFF0F, request_value);
+        if cpu.get_interrupts_enabled() {
+            cpu.set_interrupts_enabled(false);
+            let mut request_value = self.memory_manager.borrow_mut().read_memory(0xFF0F);
+            request_value ^= 1 << bit;
+            self.memory_manager.borrow_mut().write_memory(0xFF0F, request_value);
 
-        // Push PC onto stack
-        let pc = cpu.get_reg_pc();
-        cpu.stack_push(pc);
-        cpu.set_halted(false);
+            // Push PC onto stack
+            let pc = cpu.get_reg_pc();
+            cpu.stack_push(pc);
 
-        match bit {
-            0 => cpu.set_reg_pc(0x40),    // V-Blank
-            1 => cpu.set_reg_pc(0x48),    // LCD
-            2 => cpu.set_reg_pc(0x50),    // Timer
-            4 => cpu.set_reg_pc(0x60),    // Controller
-            _ => panic!("Invalid bit given to interrupt handler: {}", bit)
+            match bit {
+                0 => cpu.set_reg_pc(0x40),    // V-Blank
+                1 => cpu.set_reg_pc(0x48),    // LCD
+                2 => cpu.set_reg_pc(0x50),    // Timer
+                4 => cpu.set_reg_pc(0x60),    // Controller
+                _ => panic!("Invalid bit given to interrupt handler: {}", bit)
+            }
         }
+        cpu.set_halted(false);
     }
 
     /// Checks if any interrupts need to be handled.

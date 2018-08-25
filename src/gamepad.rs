@@ -80,10 +80,10 @@ impl Gamepad {
     pub fn key_pressed(&mut self, key: i32) {
 
         // Check if the key was not set already
-        let mut state_changed = false;
+        let mut state_changed = true;
 
         if (self.memory_manager.borrow_mut().gamepad_state & (1 << key)) >> key == 0 {
-            state_changed = true;
+            state_changed = false;
         }
 
         self.memory_manager.borrow_mut().gamepad_state ^= 1 << key;
@@ -103,7 +103,7 @@ impl Gamepad {
             will_request_interrupt = true;
         }
 
-        if will_request_interrupt && !state_changed {
+        if will_request_interrupt && state_changed {
             self.interrupt_handler.request_interrupt(4);
         }
     }

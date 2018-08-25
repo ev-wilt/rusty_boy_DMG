@@ -9,6 +9,8 @@ use gameboy::sdl2::video::Window;
 use gameboy::sdl2::render::Canvas;
 use gameboy::sdl2::VideoSubsystem;
 
+static SCALE: u32 = 2;
+
 pub enum DisplayColor {
     White,
     LightGray,
@@ -30,7 +32,7 @@ impl DisplayManager {
     pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler, video_subsystem: &VideoSubsystem) -> DisplayManager {
         
         // Set up video
-        let window = video_subsystem.window("Rusty Boy DMG", 160, 144)
+        let window = video_subsystem.window("Rusty Boy DMG", 160 * SCALE, 144 * SCALE)
             .opengl()
             .build()
             .unwrap();
@@ -59,7 +61,7 @@ impl DisplayManager {
             let green = self.display[x][y][1];
             let blue = self.display[x][y][2];
             self.canvas.set_draw_color(Color::RGB(red, green, blue));
-            let _ = self.canvas.fill_rect(Rect::new(x as i32, y as i32, 1, 1));
+            let _ = self.canvas.fill_rect(Rect::new((x * SCALE as usize) as i32, (y * SCALE as usize) as i32, 1 * SCALE, 1 * SCALE));
         }
 
         self.canvas.present();
@@ -143,29 +145,24 @@ impl DisplayManager {
             tile_y = scroll_y.wrapping_add(self.memory_manager.borrow_mut().read_memory(0xFF44));
         }
         else {
-            tile_y = self.memory_manager.borrow_mut().read_memory(0xFF44) - window_y;
+            tile_y = self.memory_manager.borrow_mut().read_memory(0xFF44).wrapping_sub(window_y);
         }
 
-        let pixel_y = (tile_y / 8) as u16 * 32;
+        let pixel_y = (tile_y as u16 / 8) * 32;
 
         // Draw all horizontal pixels for the 
         // current scanline
         for pixel in 0..160 {
-            let mut tile_x = pixel + scroll_x;
-
-            if window_enabled && pixel >= window_x {
-                tile_x = pixel - window_x;
-            }
-
-            let pixel_x = (tile_x / 8) as u16;
+            let tile_x = if window_enabled && pixel >= window_x { pixel.wrapping_sub(window_x) } else { scroll_x.wrapping_add(pixel) };
+            let pixel_x = tile_x as u16 / 8;
             let tile_address = tile_map_display + pixel_x as u16 + pixel_y as u16;
             let tile_id: i16;
 
             if unsigned_data {
-                tile_id = self.memory_manager.borrow_mut().read_memory(tile_address as u16) as i16;
+                tile_id = (self.memory_manager.borrow_mut().read_memory(tile_address) as u8) as i16;
             }
             else {
-                tile_id = (self.memory_manager.borrow_mut().read_memory(tile_address as u16) as i8) as i16;
+                tile_id = (self.memory_manager.borrow_mut().read_memory(tile_address) as i8) as i16;
             }
             
             let mut tile_loc = bg_window_tile_data;
@@ -173,7 +170,7 @@ impl DisplayManager {
                 tile_loc += tile_id as u16 * 16;
             }
             else {
-                tile_loc += (tile_id as i8 as i16 + 128) as u16 * 16;
+                tile_loc += (tile_id + 128) as u16 * 16;
             }
 
             let current_line = (tile_y % 8) * 2;
@@ -226,13 +223,13 @@ impl DisplayManager {
             if current_scanline >= sprite_y && current_scanline < (sprite_y + sprite_size) {
                 
                 let sprite_line = if flip_y {
-                    (sprite_size - 1 - (current_scanline - sprite_y)) as u16
+                    (((current_scanline - sprite_y) - sprite_size) * -1) as u16
                 }
                 else {
                     (current_scanline - sprite_y) as u16
                 };
 
-                let data_address = (0x8000 + sprite_id * 16) + sprite_line * 2;
+                let data_address = 0x8000 + sprite_id * 16 + sprite_line * 2;
                 let data_lo = self.memory_manager.borrow_mut().read_memory(data_address);
                 let data_hi = self.memory_manager.borrow_mut().read_memory(data_address + 1);
 

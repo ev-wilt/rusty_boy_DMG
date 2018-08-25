@@ -166,6 +166,7 @@ impl Cpu {
         self.reg_pc += 1;
 
         // println!("Opcode: 0x{:02X}", opcode);
+        // println!("{:04X}", self.reg_pc);
         match opcode {
             0x00 => { /* NOP */ 4 },
             0x01 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_bc); 12 },
@@ -205,7 +206,7 @@ impl Cpu {
             0x0A => { self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_bc.get_pair()); 8 },
             0x0B => { 
                 let val = self.reg_bc.get_pair();
-                self.reg_bc.set_pair(val - 1);
+                self.reg_bc.set_pair(val.wrapping_sub(1));
                 8
             },
             0x0C => { 
@@ -227,7 +228,7 @@ impl Cpu {
                 self.reg_af.hi = a;
                 4
             },
-            0x10 => { /* STOP */  4 },
+            0x10 => { self.halted = true; 4 },
             0x11 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_de); 12 },
             0x12 => { self.memory_manager.borrow_mut().write_memory(self.reg_de.get_pair(), self.reg_af.hi); 8 },
             0x13 => { inc_reg_pair(&mut self.reg_de); 8 },
@@ -260,7 +261,7 @@ impl Cpu {
             0x1A => { self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_de.get_pair()); 8 },
             0x1B => { 
                 let val = self.reg_de.get_pair();
-                self.reg_de.set_pair(val - 1);
+                self.reg_de.set_pair(val.wrapping_sub(1));
                 8
             },
             0x1C => { 
@@ -336,7 +337,7 @@ impl Cpu {
             },
             0x2B => { 
                 let val = self.reg_hl.get_pair();
-                self.reg_hl.set_pair(val - 1);
+                self.reg_hl.set_pair(val.wrapping_sub(1));
                 8
             },
             0x2C => { 
@@ -447,7 +448,7 @@ impl Cpu {
             0x42 => { ld_u8_reg(self.reg_de.hi, &mut self.reg_bc.hi); 4 },
             0x43 => { ld_u8_reg(self.reg_de.lo, &mut self.reg_bc.hi); 4 },
             0x44 => { ld_u8_reg(self.reg_hl.hi, &mut self.reg_bc.hi); 4 },
-            0x45 => { ld_u8_reg(self.reg_de.lo, &mut self.reg_bc.hi); 4 },
+            0x45 => { ld_u8_reg(self.reg_hl.lo, &mut self.reg_bc.hi); 4 },
             0x46 => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_bc.hi); 8 },
             0x47 => { ld_u8_reg(self.reg_af.hi, &mut self.reg_bc.hi); 4 },
             0x48 => { ld_u8_reg(self.reg_bc.hi, &mut self.reg_bc.lo); 4 },
@@ -455,7 +456,7 @@ impl Cpu {
             0x4A => { ld_u8_reg(self.reg_de.hi, &mut self.reg_bc.lo); 4 },
             0x4B => { ld_u8_reg(self.reg_de.lo, &mut self.reg_bc.lo); 4 },
             0x4C => { ld_u8_reg(self.reg_hl.hi, &mut self.reg_bc.lo); 4 },
-            0x4D => { ld_u8_reg(self.reg_de.lo, &mut self.reg_bc.lo); 4 },
+            0x4D => { ld_u8_reg(self.reg_hl.lo, &mut self.reg_bc.lo); 4 },
             0x4E => { ld_u8_reg(self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair()), &mut self.reg_bc.lo); 4 },
             0x4F => { ld_u8_reg(self.reg_af.hi, &mut self.reg_bc.lo); 4 },
             0x50 => { ld_u8_reg(self.reg_bc.hi, &mut self.reg_de.hi); 4 },
