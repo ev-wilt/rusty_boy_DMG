@@ -1,5 +1,4 @@
 use memory_manager::*;
-use interrupt_handler::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -22,14 +21,13 @@ pub struct DisplayManager {
     display: [[[u8; 3]; 144]; 160],
     remaining_cycles: i32,
     memory_manager: Rc<RefCell<MemoryManager>>,
-    interrupt_handler: InterruptHandler,
     canvas: Canvas<Window>
 }
 
 impl DisplayManager {
 
     /// Default constructor.
-    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler, video_subsystem: &VideoSubsystem) -> DisplayManager {
+    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, video_subsystem: &VideoSubsystem) -> DisplayManager {
         
         // Set up video
         let window = video_subsystem.window("Rusty Boy DMG", 160 * SCALE, 144 * SCALE)
@@ -45,7 +43,6 @@ impl DisplayManager {
             display: [[[0; 3]; 144]; 160],
             remaining_cycles: 456,
             memory_manager: memory_manager,
-            interrupt_handler: interrupt_handler,
             canvas: canvas
         }
     }
@@ -300,7 +297,7 @@ impl DisplayManager {
 
             // V-Blank
             if next_scanline == 144 {
-                self.interrupt_handler.request_interrupt(0);
+                self.memory_manager.borrow_mut().request_interrupt(0);
             }
 
             // Reset scanline
@@ -382,13 +379,13 @@ impl DisplayManager {
         }
 
         if request_interrupt && (new_mode != previous_mode) {
-            self.interrupt_handler.request_interrupt(1);
+            self.memory_manager.borrow_mut().request_interrupt(1);
         }
 
         if current_scanline == self.memory_manager.borrow_mut().read_memory(0xFF45) {
             display_status |= 1 << 2;
             if (display_status & (1 << 6) >> 6) == 1 {
-                self.interrupt_handler.request_interrupt(1);
+                self.memory_manager.borrow_mut().request_interrupt(1);
             }
         }
         else {

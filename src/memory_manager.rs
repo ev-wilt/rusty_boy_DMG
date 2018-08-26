@@ -1,5 +1,4 @@
 use cartridge::*;
-use interrupt_handler::*;
 
 static TIMER: u16 = 0xFF05;
 static TIMER_MODULATOR: u16 = 0xFF06;
@@ -153,7 +152,6 @@ impl MemoryManager {
                 let frequency = self.get_frequency();
                 self.memory[TIMER_CONTROLLER as usize] = byte;
                 let new_frequency = self.get_frequency();
-
                 if frequency != new_frequency {
                     self.set_frequency();
                 }
@@ -207,7 +205,7 @@ impl MemoryManager {
 
     /// Returns whether the clock has been enabled.
     pub fn clock_enabled(&mut self) -> bool {
-        if (self.memory[TIMER_CONTROLLER as usize] & 0x02) >> 1 == 1 {
+        if (self.read_memory(TIMER_CONTROLLER) & (1 << 2)) >> 2 == 1 {
             return true;
         }
         false
@@ -215,7 +213,7 @@ impl MemoryManager {
 
     /// Updates the timers based on the current
     /// amount of CPU cycles.
-    pub fn update_timers(&mut self, cycles: i32, interrupt_handler: &mut InterruptHandler) {
+    pub fn update_timers(&mut self, cycles: i32) {
         self.update_div_register(cycles);
 
         // Update timer only if clock is enabled
@@ -225,16 +223,25 @@ impl MemoryManager {
             if self.timer_counter <= 0 {
                 self.set_frequency();
 
-                if self.memory[TIMER as usize] == 0xFF {
-                    let modulator = self.memory[TIMER_MODULATOR as usize];
+                if self.read_memory(TIMER) == 0xFF {
+                    let modulator = self.read_memory(TIMER_MODULATOR);
                     self.write_memory(TIMER, modulator);
-                    interrupt_handler.request_interrupt(2);
+                    self.request_interrupt(2);
                 }
                 else {
-                    let increment_timer = self.memory[TIMER as usize];
+                    let increment_timer = self.read_memory(TIMER) + 1;
                     self.write_memory(TIMER, increment_timer);
                 }
             }
         }
+        // println!("{}", self.timer_counter);
+    }
+
+    /// Requests an interrupt for the given bit,
+    /// where bits 0-4 are the different interrupts.
+    pub fn request_interrupt(&mut self, bit: u8) {
+        let mut request_value = self.read_memory(0xFF0F);
+        request_value |= 1 << bit;
+        self.write_memory(0xFF0F, request_value);
     }
 }

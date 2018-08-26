@@ -1,4 +1,3 @@
-use interrupt_handler::*;
 use memory_manager::*;
 
 use std::rc::Rc;
@@ -8,15 +7,13 @@ use gameboy::sdl2::event::Event;
 use gameboy::sdl2::keyboard::Keycode;
 
 pub struct Gamepad {
-    interrupt_handler: InterruptHandler,
     memory_manager: Rc<RefCell<MemoryManager>>,
     event_pump: EventPump
 }
 
 impl Gamepad {
-    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, interrupt_handler: InterruptHandler, event_pump: EventPump) -> Gamepad {
+    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, event_pump: EventPump) -> Gamepad {
         Gamepad {
-            interrupt_handler: interrupt_handler,
             memory_manager: memory_manager,
             event_pump: event_pump
         }
@@ -104,7 +101,7 @@ impl Gamepad {
         }
 
         if will_request_interrupt && state_changed {
-            self.interrupt_handler.request_interrupt(4);
+            self.memory_manager.borrow_mut().request_interrupt(4);
         }
     }
 }

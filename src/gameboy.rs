@@ -31,8 +31,8 @@ impl Gameboy {
         let memory_manager = Rc::new(RefCell::new(MemoryManager::new()));
         let cpu = Cpu::new(Rc::clone(&memory_manager));
         let interrupt_handler = InterruptHandler::new(Rc::clone(&memory_manager));
-        let display_manager = DisplayManager::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)), &video_subsystem);
-        let gamepad = Gamepad::new(Rc::clone(&memory_manager), InterruptHandler::new(Rc::clone(&memory_manager)), event_pump);
+        let display_manager = DisplayManager::new(Rc::clone(&memory_manager), &video_subsystem);
+        let gamepad = Gamepad::new(Rc::clone(&memory_manager), event_pump);
 
         Gameboy {
             memory_manager: memory_manager,
@@ -57,7 +57,7 @@ impl Gameboy {
             }
             let current_cycles = self.cpu.interpret_opcode();
             cycles_per_step += current_cycles;
-            self.memory_manager.borrow_mut().update_timers(current_cycles, &mut self.interrupt_handler);
+            self.memory_manager.borrow_mut().update_timers(current_cycles);
             self.display_manager.update_display(current_cycles);
             self.interrupt_handler.check_interrupts(&mut self.cpu);
             // io::stdin().read_line(&mut input).unwrap();

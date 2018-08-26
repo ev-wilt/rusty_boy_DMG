@@ -87,8 +87,8 @@ impl Cpu {
     /// Pushes a word onto the stack.
     pub fn stack_push(&mut self, val: u16) {
         let prev = self.reg_sp.get_pair();
-        let val_lo = (val >> 8) as u8;
-        let val_hi = (val & 0xFF) as u8;
+        let val_hi = (val >> 8) as u8;
+        let val_lo = (val & 0xFF) as u8;
         self.reg_sp.set_pair(prev - 1);
         self.memory_manager.borrow_mut().write_memory(self.reg_sp.get_pair(), val_hi);
         self.reg_sp.set_pair(prev - 2);
@@ -98,8 +98,8 @@ impl Cpu {
     /// Pops a word off the stack.
     pub fn stack_pop(&mut self) -> u16 {
         let prev = self.reg_sp.get_pair();
-        let mut word = (self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair()) as u16) << 8;
-        word |= self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair() + 1) as u16;
+        let mut word = (self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair() + 1) as u16) << 8;
+        word |= self.memory_manager.borrow_mut().read_memory(self.reg_sp.get_pair()) as u16;
         self.reg_sp.set_pair(prev + 2);
         word
     } 
@@ -199,8 +199,7 @@ impl Cpu {
             },
             0x09 => {
                 let mut bc = self.reg_bc.get_pair();
-                self.add_u16_hl(&mut bc);
-                self.reg_bc.set_pair(bc);
+                self.add_u16_hl(bc);
                 8
             },
             0x0A => { self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_bc.get_pair()); 8 },
@@ -254,8 +253,7 @@ impl Cpu {
             0x18 => { self.reg_pc = ((self.get_byte() as i8) as i32 + ((self.reg_pc as u32) as i32)) as u16; 12 },
             0x19 => {
                 let mut de = self.reg_de.get_pair();
-                self.add_u16_hl(&mut de);
-                self.reg_de.set_pair(de);
+                self.add_u16_hl(de);
                 8
             },
             0x1A => { self.reg_af.hi = self.memory_manager.borrow_mut().read_memory(self.reg_de.get_pair()); 8 },
@@ -326,8 +324,7 @@ impl Cpu {
             },
             0x29 => {
                 let mut hl = self.reg_hl.get_pair();
-                self.add_u16_hl(&mut hl);
-                self.reg_hl.set_pair(hl);
+                self.add_u16_hl(hl);
                 8
             },
             0x2A => {
@@ -409,8 +406,7 @@ impl Cpu {
             },
             0x39 => {
                 let mut sp = self.reg_sp.get_pair();
-                self.add_u16_hl(&mut sp);
-                self.reg_sp.set_pair(sp);
+                self.add_u16_hl(sp);
                 8
             },
             0x3A => {
@@ -2081,11 +2077,11 @@ impl Cpu {
     }
 
     /// Adds a u16 into HL.
-    pub fn add_u16_hl(&mut self, src: &mut u16) {
+    pub fn add_u16_hl(&mut self, src: u16) {
         let hl = self.reg_hl.get_pair();
-        self.reg_hl.set_pair(hl.wrapping_add(*src));
-        self.update_half_carry_flag((((*src & 0xFFF) + (hl & 0xFFF)) & 0x100) == 0x100);
-        self.update_carry_flag(*src as u32 + hl as u32 > 0xFFFF);
+        self.reg_hl.set_pair(hl.wrapping_add(src));
+        self.update_half_carry_flag(((src & 0x7FF) + (hl & 0x7FF)) > 0x7FF);
+        self.update_carry_flag(hl > 0xFFFF - src);
         self.update_subtract_flag(false);
     }
 
