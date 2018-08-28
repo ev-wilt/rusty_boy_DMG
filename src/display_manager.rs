@@ -190,16 +190,12 @@ impl DisplayManager {
             }
 
             let current_scanline = self.memory_manager.borrow_mut().read_memory(0xFF44);
-            if current_scanline > 143 || pixel > 159 {
-                panic!("Setting color of pixel outside of visible display.
-                        Scanline: {} should be in range 0-143, 
-                        Pixel: {} should be in range 0-159", current_scanline, pixel);
+            if current_scanline <= 143 && pixel <= 159 {
+                self.display[pixel as usize][current_scanline as usize][0] = red;
+                self.display[pixel as usize][current_scanline as usize][1] = green;
+                self.display[pixel as usize][current_scanline as usize][2] = blue;
             }
-            self.display[pixel as usize][current_scanline as usize][0] = red;
-            self.display[pixel as usize][current_scanline as usize][1] = green;
-            self.display[pixel as usize][current_scanline as usize][2] = blue;
         }
-
     }
 
     /// Adds the current sprites in memeory
@@ -243,21 +239,23 @@ impl DisplayManager {
                     let blue: u8;
 
                     match color {
-                        DisplayColor::White => { red = 0xFF; green = 0xFF; blue = 0xFF },
+                        // Don't print white pixels, they're transparent.
+                        DisplayColor::White => { continue },
                         DisplayColor::LightGray => { red = 0xCC; green = 0xCC; blue = 0xCC },
                         DisplayColor::DarkGray => { red = 0x77; green = 0x77; blue = 0x77 },
                         DisplayColor::Black => { red = 0x00; green = 0x00; blue = 0x00 }
                     }
 
                     let pixel = sprite_x + (7 - sprite_pixel);
-                    if current_scanline > 143 || current_scanline < 0 || pixel > 159 || pixel < 0 {
-                        panic!("Setting color of pixel outside of visible display.
-                            Scanline: {} should be in range 0-143, 
-                            Pixel: {} should be in range 0-159", current_scanline, pixel);
+                    if (sprite_attrs & (1 << 7)) >> 7 == 1 && self.display[pixel as usize][current_scanline as usize][0] != 0xFF {
+                        continue;
                     }
-                    self.display[pixel as usize][current_scanline as usize][0] = red;
-                    self.display[pixel as usize][current_scanline as usize][1] = green;
-                    self.display[pixel as usize][current_scanline as usize][2] = blue;
+
+                    if current_scanline <= 143 && current_scanline >= 0 && pixel <= 159 && pixel >= 0 {
+                        self.display[pixel as usize][current_scanline as usize][0] = red;
+                        self.display[pixel as usize][current_scanline as usize][1] = green;
+                        self.display[pixel as usize][current_scanline as usize][2] = blue;
+                    }
                 }
             }
         }

@@ -1154,9 +1154,9 @@ impl Cpu {
                 8
             },
             0x06 => {
-                let mut byte = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let mut byte = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.rlc_u8(&mut byte);
-                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = byte;
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), byte);
                 16
             },
             0x07 => { 
@@ -1202,9 +1202,9 @@ impl Cpu {
                 8
             },
             0x0E => {
-                let mut byte = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let mut byte = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.rrc_u8(&mut byte);
-                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = byte;
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), byte);
                 16
             },
             0x0F => { 
@@ -1250,9 +1250,9 @@ impl Cpu {
                 8
             },
             0x16 => {
-                let mut byte = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let mut byte = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.rl_u8(&mut byte);
-                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = byte;
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), byte);
                 16
             },
             0x17 => { 
@@ -1298,9 +1298,9 @@ impl Cpu {
                 8
             },
             0x1E => {
-                let mut byte = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let mut byte = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.rr_u8(&mut byte);
-                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = byte;
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), byte);
                 16
             },
             0x1F => { 
@@ -1340,8 +1340,9 @@ impl Cpu {
                 8
             },
             0x26 => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
-                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = self.sla_u8(val);
+                let byte = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                let res = self.sla_u8(byte);
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), res);
                 16
             },
             0x27 => {
@@ -1380,8 +1381,9 @@ impl Cpu {
                 8
             },
             0x2E => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
-                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = self.sra_u8(val);
+                let byte = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                let res = self.sra_u8(byte);
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), res);
                 16
             },
             0x2F => {
@@ -1492,8 +1494,9 @@ impl Cpu {
                 8
             },
             0x3E => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
-                self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize] = self.srl_u8(val);
+                let byte = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
+                let res = self.srl_u8(byte);
+                self.memory_manager.borrow_mut().write_memory(self.reg_hl.get_pair(), res);
                 16
             },
             0x3F => {
@@ -1544,7 +1547,7 @@ impl Cpu {
                 8
             },
             0x46 => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.update_zero_flag(!test_bit(val, 0));
                 self.update_subtract_flag(false);
                 self.update_half_carry_flag(true);
@@ -1600,7 +1603,7 @@ impl Cpu {
                 8
             },
             0x4E => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.update_zero_flag(!test_bit(val, 1));
                 self.update_subtract_flag(false);
                 self.update_half_carry_flag(true);
@@ -1656,7 +1659,7 @@ impl Cpu {
                 8
             },
             0x56 => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.update_zero_flag(!test_bit(val, 2));
                 self.update_subtract_flag(false);
                 self.update_half_carry_flag(true);
@@ -1712,7 +1715,7 @@ impl Cpu {
                 8
             },
             0x5E => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.update_zero_flag(!test_bit(val, 3));
                 self.update_subtract_flag(false);
                 self.update_half_carry_flag(true);
@@ -1768,7 +1771,7 @@ impl Cpu {
                 8
             },
             0x66 => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.update_zero_flag(!test_bit(val, 4));
                 self.update_subtract_flag(false);
                 self.update_half_carry_flag(true);
@@ -1824,7 +1827,7 @@ impl Cpu {
                 8
             },
             0x6E => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.update_zero_flag(!test_bit(val, 5));
                 self.update_subtract_flag(false);
                 self.update_half_carry_flag(true);
@@ -1880,7 +1883,7 @@ impl Cpu {
                 8
             },
             0x76 => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.update_zero_flag(!test_bit(val, 6));
                 self.update_subtract_flag(false);
                 self.update_half_carry_flag(true);
@@ -1936,7 +1939,7 @@ impl Cpu {
                 8
             },
             0x7E => {
-                let val = self.memory_manager.borrow_mut().memory[self.reg_hl.get_pair() as usize];
+                let val = self.memory_manager.borrow_mut().read_memory(self.reg_hl.get_pair());
                 self.update_zero_flag(!test_bit(val, 7));
                 self.update_subtract_flag(false);
                 self.update_half_carry_flag(true);
