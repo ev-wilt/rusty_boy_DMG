@@ -140,13 +140,7 @@ impl MemoryManager {
 
             // DIV register
             0xFF04 => self.memory[0xFF04] = 0,
-
-            0xFF02 => {
-                if byte == 0x81 {
-                    print!("{}", self.memory[0xFF01] as char);
-                }
-            }
-
+            
             // Updating frequency
             0xFF07 => {
                 let frequency = self.get_frequency();

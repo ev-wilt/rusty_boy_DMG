@@ -37,23 +37,21 @@ impl InterruptHandler {
                 _ => panic!("Invalid bit given to interrupt handler: {}", bit)
             }
         }
-        cpu.set_halted(false);
     }
 
     /// Checks if any interrupts need to be handled.
     pub fn check_interrupts(&mut self, cpu: &mut Cpu) {
-        if cpu.get_interrupts_enabled() {
-            let request_value = self.memory_manager.borrow_mut().read_memory(0xFF0F);
-            let enabled_value = self.memory_manager.borrow_mut().read_memory(0xFFFF);
+        let request_value = self.memory_manager.borrow_mut().read_memory(0xFF0F);
+        let enabled_value = self.memory_manager.borrow_mut().read_memory(0xFFFF);
 
-            if request_value > 0 {
-                for i in 0..5 {
+        if request_value > 0 {
+            for i in 0..5 {
 
-                    // Check if request and enabled registers 
-                    // are set to 1
-                    if (request_value & (1 << i)) >> i == 1 && (enabled_value & (1 << i)) >> i == 1 {
-                        self.handle_interrupt(i, cpu);
-                    }
+                // Check if request and enabled registers 
+                // are set to 1
+                if (request_value & (1 << i)) >> i == 1 && (enabled_value & (1 << i)) >> i == 1 {
+                    self.handle_interrupt(i, cpu);
+                    cpu.set_halted(false);
                 }
             }
         }

@@ -2286,16 +2286,16 @@ impl Cpu {
             shift |= 0x60;
         }
         if flags & (1 << 6) == 0 {
-            if self.reg_af.hi & 0xF > 9 {
+            if self.reg_af.hi & 0xF > 0x9 {
                 shift |= 0x6;
             }
             if self.reg_af.hi > 0x99 {
                 shift |= 0x60;
             }
-            self.reg_af.hi = self.reg_af.hi.wrapping_sub(shift);
+            self.reg_af.hi = self.reg_af.hi.wrapping_add(shift);
         }
         else {
-            self.reg_af.hi = self.reg_af.hi.wrapping_add(shift);
+            self.reg_af.hi = self.reg_af.hi.wrapping_sub(shift);
         }
 
         let is_zero = self.reg_af.hi == 0;
