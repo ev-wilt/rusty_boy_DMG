@@ -8,14 +8,15 @@ use gamepad::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
-// use std::io;
+use gameboy::sdl2::EventPump;
 
 pub struct Gameboy {
     pub cpu: Cpu,
     pub memory_manager: Rc<RefCell<MemoryManager>>,
     pub interrupt_handler: InterruptHandler,
     pub display_manager: DisplayManager,
-    pub gamepad: Gamepad
+    pub gamepad: Gamepad,
+    pub event_pump: EventPump
 }
 
 impl Gameboy {
@@ -32,14 +33,15 @@ impl Gameboy {
         let cpu = Cpu::new(Rc::clone(&memory_manager));
         let interrupt_handler = InterruptHandler::new(Rc::clone(&memory_manager));
         let display_manager = DisplayManager::new(Rc::clone(&memory_manager), &video_subsystem);
-        let gamepad = Gamepad::new(Rc::clone(&memory_manager), event_pump);
+        let gamepad = Gamepad::new(Rc::clone(&memory_manager));
 
         Gameboy {
             memory_manager: memory_manager,
             cpu: cpu,
             interrupt_handler: interrupt_handler,
             display_manager: display_manager,
-            gamepad: gamepad
+            gamepad: gamepad,
+            event_pump: event_pump
         }
     }
 
@@ -49,18 +51,18 @@ impl Gameboy {
     pub fn step(&mut self) -> bool {
         let max_cycles = 69905;
         let mut cycles_per_step = 0;
-        // let mut input = String::new();
+        let event_pump = &mut self.event_pump;
 
+        if !self.gamepad.poll_events(event_pump) {
+            return false;
+        }
+        
         while cycles_per_step < max_cycles {
-            if !self.gamepad.poll_events() {
-                return false;
-            }
             let current_cycles = self.cpu.interpret_opcode();
             cycles_per_step += current_cycles;
             self.memory_manager.borrow_mut().update_timers(current_cycles);
             self.display_manager.update_display(current_cycles);
             self.interrupt_handler.check_interrupts(&mut self.cpu);
-            // io::stdin().read_line(&mut input).unwrap();
         }
         self.display_manager.draw_display();
         true

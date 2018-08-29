@@ -8,14 +8,12 @@ use gameboy::sdl2::keyboard::Keycode;
 
 pub struct Gamepad {
     memory_manager: Rc<RefCell<MemoryManager>>,
-    event_pump: EventPump
 }
 
 impl Gamepad {
-    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, event_pump: EventPump) -> Gamepad {
+    pub fn new(memory_manager: Rc<RefCell<MemoryManager>>) -> Gamepad {
         Gamepad {
             memory_manager: memory_manager,
-            event_pump: event_pump
         }
     }
 
@@ -38,11 +36,10 @@ impl Gamepad {
     /// Polls the current events in the
     /// event pump and return false
     /// when the quit event occurs.
-    pub fn poll_events(&mut self) -> bool {
-        let mut event = self.event_pump.poll_event();
+    pub fn poll_events(&mut self, event_pump: &mut EventPump) -> bool {
 
-        while event != None {
-            match event.unwrap() {
+        for event in event_pump.poll_iter() {
+            match event {
                 Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     return false;
                 },
@@ -60,9 +57,8 @@ impl Gamepad {
                 },
                 _ => {}
             }
-            event = self.event_pump.poll_event();
         }
-        return true;
+        true
     }
 
     /// Updates the gamepad's state when
