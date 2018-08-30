@@ -25,8 +25,8 @@ impl Gamepad {
             Keycode::A => Some(1),
             Keycode::W => Some(2),
             Keycode::S => Some(3),
-            Keycode::J => Some(4),
-            Keycode::K => Some(5),
+            Keycode::K => Some(4),
+            Keycode::J => Some(5),
             Keycode::Space => Some(6),
             Keycode::Return => Some(7),
             _ => None

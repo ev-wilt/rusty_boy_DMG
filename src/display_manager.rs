@@ -72,25 +72,22 @@ impl DisplayManager {
         let palette_lo: i32;
 
         match color_id {
-            0 => { palette_hi = 1; palette_lo = 0},
-            1 => { palette_hi = 3; palette_lo = 2},
-            2 => { palette_hi = 5; palette_lo = 4},
-            3 => { palette_hi = 7; palette_lo = 6},
+            0 => { palette_hi = 1; palette_lo = 0 },
+            1 => { palette_hi = 3; palette_lo = 2 },
+            2 => { palette_hi = 5; palette_lo = 4 },
+            3 => { palette_hi = 7; palette_lo = 6 },
             _ => { panic!("Invalid value for color ID: {}", color_id); }
         }
 
-        let mut color_bits = if (color_palette & (1 << palette_hi)) >> palette_hi == 1 { 1 } else { 0 };
-        color_bits <<= 1;
-        color_bits |= if (color_palette & (1 << palette_lo)) >> palette_lo == 1 { 1 } else { 0 };
-        let color: DisplayColor;
-
-        match color_bits {
-            0 => { color = DisplayColor::White },
-            1 => { color = DisplayColor::LightGray },
-            2 => { color = DisplayColor::DarkGray },
-            3 => { color = DisplayColor::Black }
+        let mut color_bits = if (color_palette & (1 << palette_hi)) != 0 { 1 << 1 } else { 0 };
+        color_bits |= if (color_palette & (1 << palette_lo)) != 0 { 1 } else { 0 };
+        let color = match color_bits {
+            0 => { DisplayColor::White },
+            1 => { DisplayColor::LightGray },
+            2 => { DisplayColor::DarkGray },
+            3 => { DisplayColor::Black }
             _ => { panic!("Invalid value for color: {}", color_bits); }
-        }
+        };
         color
     }
 
@@ -174,8 +171,7 @@ impl DisplayManager {
             let line_data_lo = self.memory_manager.borrow_mut().read_memory(tile_loc + current_line as u16);
             let line_data_hi = self.memory_manager.borrow_mut().read_memory(tile_loc + current_line as u16 + 1);
             let color_loc = ((tile_x as i32 % 8) - 7) * -1;
-            let mut color_id = if (line_data_hi & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
-            color_id <<= 1;
+            let mut color_id = if (line_data_hi & (1 << color_loc)) >> color_loc == 1 { 1 << 1 } else { 0 };
             color_id |= if (line_data_lo & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
             let color = self.get_color(color_id, 0xFF47);
             let red: u8;
@@ -229,11 +225,11 @@ impl DisplayManager {
                 for sprite_pixel in 0..8 {
 
                     let mut color_loc = if flip_x { (sprite_pixel - 7) * -1 } else { sprite_pixel };
-                    let mut color_id = if (data_hi & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
-                    color_id <<= 1;
-                    color_id |= if (data_lo & (1 << color_loc)) >> color_loc == 1 { 1 } else { 0 };
-                    let color_address = if sprite_attrs & (1 << 4) >> 4 == 1 { 0xFF49 } else { 0xFF48 };
+                    let mut color_id = if (data_hi & (1 << color_loc)) != 0 { 1 << 1 } else { 0 };
+                    color_id |= if (data_lo & (1 << color_loc)) != 0 { 1 } else { 0 };
+                    let color_address = if (sprite_attrs & (1 << 4)) >> 4 == 1 { 0xFF49 } else { 0xFF48 };
                     let mut color = self.get_color(color_id, color_address);
+
                     let red: u8;
                     let green: u8;
                     let blue: u8;
@@ -247,11 +243,9 @@ impl DisplayManager {
                     }
 
                     let pixel = sprite_x + (7 - sprite_pixel);
-                    if (sprite_attrs & (1 << 7)) >> 7 == 1 && self.display[pixel as usize][current_scanline as usize][0] != 0xFF {
-                        continue;
-                    }
 
-                    if current_scanline <= 143 && current_scanline >= 0 && pixel <= 159 && pixel >= 0 {
+                    if (current_scanline <= 143 && current_scanline >= 0 && pixel <= 159 && pixel >= 0) &&
+                       ((sprite_attrs & (1 << 7)) >> 7 != 1 || self.display[pixel as usize][current_scanline as usize][0] == 0xFF) {
                         self.display[pixel as usize][current_scanline as usize][0] = red;
                         self.display[pixel as usize][current_scanline as usize][1] = green;
                         self.display[pixel as usize][current_scanline as usize][2] = blue;

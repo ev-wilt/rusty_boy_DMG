@@ -229,7 +229,7 @@ impl Cpu {
                 self.update_zero_flag(false);
                 4
             },
-            0x10 => { self.halted = true; 4 },
+            0x10 => { 4 },
             0x11 => { ld_u16_reg_pair(self.get_word(), &mut self.reg_de); 12 },
             0x12 => { self.memory_manager.borrow_mut().write_memory(self.reg_de.get_pair(), self.reg_af.hi); 8 },
             0x13 => { inc_reg_pair(&mut self.reg_de); 8 },

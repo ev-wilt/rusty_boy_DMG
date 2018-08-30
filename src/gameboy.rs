@@ -51,12 +51,11 @@ impl Gameboy {
     pub fn step(&mut self) -> bool {
         let max_cycles = 69905;
         let mut cycles_per_step = 0;
-        let event_pump = &mut self.event_pump;
 
-        if !self.gamepad.poll_events(event_pump) {
+        if !self.gamepad.poll_events(&mut self.event_pump) {
             return false;
         }
-        
+
         while cycles_per_step < max_cycles {
             let current_cycles = self.cpu.interpret_opcode();
             cycles_per_step += current_cycles;
