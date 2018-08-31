@@ -2,9 +2,9 @@ use memory_manager::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
-use gameboy::sdl2::EventPump;
-use gameboy::sdl2::event::Event;
-use gameboy::sdl2::keyboard::Keycode;
+use sdl2::EventPump;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 
 pub struct Gamepad {
     memory_manager: Rc<RefCell<MemoryManager>>,
@@ -43,10 +43,12 @@ impl Gamepad {
                 Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     return false;
                 },
-                Event::KeyDown { keycode: Some(keycode), .. } => {
-                    let key_val = self.resolve_key(keycode);
-                    if key_val != None {
-                        self.key_pressed(key_val.unwrap());
+                Event::KeyDown { keycode: Some(keycode), repeat, .. } => {
+                    if !repeat {
+                        let key_val = self.resolve_key(keycode);
+                        if key_val != None {
+                            self.key_pressed(key_val.unwrap());
+                        }
                     }
                 },
                 Event::KeyUp { keycode: Some(keycode), .. } => {

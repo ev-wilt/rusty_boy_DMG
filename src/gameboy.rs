@@ -8,7 +8,7 @@ use gamepad::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use gameboy::sdl2::EventPump;
+use sdl2::EventPump;
 
 pub struct Gameboy {
     pub cpu: Cpu,

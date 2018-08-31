@@ -2,11 +2,11 @@ use memory_manager::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use gameboy::sdl2::pixels::Color;
-use gameboy::sdl2::rect::Rect;
-use gameboy::sdl2::video::Window;
-use gameboy::sdl2::render::Canvas;
-use gameboy::sdl2::VideoSubsystem;
+use sdl2::pixels::Color;
+use sdl2::rect::Rect;
+use sdl2::video::Window;
+use sdl2::render::Canvas;
+use sdl2::VideoSubsystem;
 
 static SCALE: u32 = 2;
 
@@ -227,19 +227,17 @@ impl DisplayManager {
                     let mut color_loc = if flip_x { (sprite_pixel - 7) * -1 } else { sprite_pixel };
                     let mut color_id = if (data_hi & (1 << color_loc)) != 0 { 1 << 1 } else { 0 };
                     color_id |= if (data_lo & (1 << color_loc)) != 0 { 1 } else { 0 };
-                    
+
+                    // Don't print pixels with a color ID of 0, they're transparent.
                     if color_id == 0 { continue };
                     let color_address = if (sprite_attrs & (1 << 4)) >> 4 == 1 { 0xFF49 } else { 0xFF48 };
                     let mut color = self.get_color(color_id, color_address);
-
-
 
                     let red: u8;
                     let green: u8;
                     let blue: u8;
 
                     match color {
-                        // Don't print white pixels, they're transparent.
                         DisplayColor::White => { red = 0xFF; green = 0xFF; blue = 0xFF },
                         DisplayColor::LightGray => { red = 0xCC; green = 0xCC; blue = 0xCC },
                         DisplayColor::DarkGray => { red = 0x77; green = 0x77; blue = 0x77 },
