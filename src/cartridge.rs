@@ -7,7 +7,8 @@ use std::env;
 enum BankingType {
     NoBanking,
     MBC1,
-    MBC2
+    MBC2,
+    MBC3
 }
 
 pub struct Cartridge {
@@ -17,7 +18,12 @@ pub struct Cartridge {
     current_rom_bank: u8,
     current_ram_bank: u8,
     rom_banking_mode: bool,
-    pub ram_write_enabled: bool
+    pub ram_write_enabled: bool,
+    rtc_seconds: u8,
+    rtc_minutes: u8,
+    rtc_hours: u8,
+    rtc_day_lo: u8,
+    rtc_day_hi: u8
 }
 
 impl Cartridge {
@@ -31,7 +37,12 @@ impl Cartridge {
             current_rom_bank: 1,
             current_ram_bank: 0,
             rom_banking_mode: true,
-            ram_write_enabled: false
+            ram_write_enabled: false,
+            rtc_seconds: 0,
+            rtc_minutes: 0,
+            rtc_hours: 0,
+            rtc_day_lo: 0,
+            rtc_day_hi: 0
         };
 
         // Set rom to bytes from file
@@ -45,9 +56,10 @@ impl Cartridge {
 
         // Set rom banking type
         match cartridge.rom[0x147] {
-            0 => cartridge.banking_type = BankingType::NoBanking,
-            1 | 2 | 3 => cartridge.banking_type = BankingType::MBC1,
-            4 | 5 | 6 => cartridge.banking_type = BankingType::MBC2,
+            0x0 => cartridge.banking_type = BankingType::NoBanking,
+            0x1 | 0x2 | 0x3 => cartridge.banking_type = BankingType::MBC1,
+            0x4 | 0x5 | 0x6 => cartridge.banking_type = BankingType::MBC2,
+            0xF | 0x10 | 0x11 | 0x12 | 0x13 => cartridge.banking_type = BankingType::MBC3,
             _ => panic!("Banking type is currently not supported. Value at 0x147 was 0x{:02X}", cartridge.rom[0x147])
         }
         cartridge
@@ -80,27 +92,32 @@ impl Cartridge {
 
         if (byte & 0x0F) == 0x0A {
             self.ram_write_enabled = true;
+            // Enable RTC write
         }
         else if (byte & 0x0F) == 0x00 {
             self.ram_write_enabled = false;
+            // Disable RTC write
         }
     }    
 
     /// Changes lower bits of the current ROM bank.
     pub fn change_lo_rom_bank(&mut self, byte: u8) {
         
-        // Set bank to lower half of byte if MBC2
-        if self.banking_type == BankingType::MBC2 {
-            self.current_rom_bank = byte & 0x0F;
-            if self.current_rom_bank == 0 {
-                self.current_rom_bank += 1;
+        match self.banking_type {
+
+            // Set bank to lower half of byte if MBC2
+            BankingType::MBC2 => self.current_rom_bank = byte & 0x0F,
+
+            // Set bank to whole byte if MBC3
+            BankingType::MBC3 => self.current_rom_bank = byte,
+
+            // Set bank's first five bits otherwise
+            BankingType::MBC1 | BankingType::NoBanking => {
+                self.current_rom_bank &= 0xE0;
+                self.current_rom_bank |= byte & 0x1F;
             }
-            return;
         }
 
-        // Sets bank's first five bits otherwise
-        self.current_rom_bank &= 0xE0;
-        self.current_rom_bank |= byte & 0x1F;
         if self.current_rom_bank == 0 {
             self.current_rom_bank += 1;
         }
@@ -125,12 +142,7 @@ impl Cartridge {
     /// Determines if ROM or RAM banking mode should
     /// be used based on the LSB of byte.
     pub fn set_banking_mode(&mut self, byte: u8) {
-        self.rom_banking_mode = if (byte & 0x01) == 0 {
-            true
-        } 
-        else {
-            false
-        };
+        self.rom_banking_mode = byte & 1 == 0;
 
         // Update RAM bank to 0 if in ROM banking mode
         if self.rom_banking_mode {
@@ -165,6 +177,9 @@ impl Cartridge {
                     else {
                         self.change_ram_bank(byte);
                     }
+                }
+                else if self.banking_type == BankingType::MBC3 {
+
                 }
             },
 

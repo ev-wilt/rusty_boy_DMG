@@ -34,16 +34,12 @@ impl DisplayManager {
             .opengl()
             .build()
             .unwrap();
-        let mut canvas = window.into_canvas().build().unwrap();
-        canvas.set_draw_color(Color::RGB(0, 0, 0));
-        canvas.clear();
-        canvas.present();
 
         DisplayManager {
             display: [[[0; 3]; 144]; 160],
             remaining_cycles: 456,
             memory_manager: memory_manager,
-            canvas: canvas
+            canvas: window.into_canvas().build().unwrap()
         }
     }
 
