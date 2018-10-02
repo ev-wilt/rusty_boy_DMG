@@ -7,7 +7,6 @@ use sdl2::rect::Rect;
 use sdl2::video::Window;
 use sdl2::render::Canvas;
 use sdl2::VideoSubsystem;
-use sdl2::video::SwapInterval;
 
 static SCALE: u32 = 2;
 
@@ -29,8 +28,6 @@ impl DisplayManager {
 
     /// Default constructor.
     pub fn new(memory_manager: Rc<RefCell<MemoryManager>>, video_subsystem: &VideoSubsystem) -> DisplayManager {
-        // Set up video
-        video_subsystem.gl_set_swap_interval(SwapInterval::VSync);
         let window = video_subsystem.window("Rusty Boy DMG", 160 * SCALE, 144 * SCALE)
             .opengl()
             .build()
