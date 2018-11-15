@@ -2,6 +2,8 @@
 
 Rusty Boy DMG is an emulator for the original Nintendo Gameboy written in the Rust programming language. While support for the Gameboy Color may be added in the future, the current focus is on the original Gameboy model.
 
+![image](https://i.imgur.com/2Hrfrno.png)
+
 # Running a ROM
 
 To run a ROM, you'll first need to build the emulator with the following command. You'll need SDL2 installed and cargo installed for this command to work.
